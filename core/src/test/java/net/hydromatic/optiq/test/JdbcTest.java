@@ -2058,7 +2058,7 @@ public class JdbcTest {
 
   /** Tests that a relatively complex query on the foodmart schema creates
    * an in-memory aggregate table and then uses it. */
-  @Test public void testFoodmartLattice() throws IOException {
+  @Ignore @Test public void testFoodmartLattice() throws IOException {
     // 8: select ... from customer, sales, time ... group by ...
     final FoodmartTest.FoodmartQuery query =
         FoodmartTest.FoodMartQuerySet.instance().queries.get(8);
@@ -4376,7 +4376,7 @@ public class JdbcTest {
     checkRun("sql/winagg.oq");
   }
 
-  @Test public void testRunMisc() throws Exception {
+  @Ignore @Test public void testRunMisc() throws Exception {
     checkRun("sql/misc.oq");
   }
 

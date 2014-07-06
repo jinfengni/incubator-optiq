@@ -19,6 +19,7 @@ package net.hydromatic.optiq.tools;
 import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.config.Lex;
 import net.hydromatic.optiq.config.OptiqConnectionProperty;
+import net.hydromatic.optiq.jdbc.CachingOptiqSchema;
 import net.hydromatic.optiq.jdbc.OptiqConnection;
 import net.hydromatic.optiq.jdbc.OptiqSchema;
 import net.hydromatic.optiq.prepare.OptiqPrepareImpl;
@@ -161,7 +162,7 @@ public class Frameworks {
    *    definitions of tables, columns etc.
    */
   public static SchemaPlus createRootSchema(boolean addMetadataSchema) {
-    return OptiqSchema.createRootSchema(addMetadataSchema).plus();
+    return CachingOptiqSchema.createRootSchema(addMetadataSchema).plus();
   }
 
   public static ConfigBuilder newConfigBuilder() {

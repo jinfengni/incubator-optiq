@@ -61,7 +61,7 @@ abstract class OptiqConnectionImpl
     implements OptiqConnection, QueryProvider {
   public final JavaTypeFactory typeFactory;
 
-  final OptiqRootSchema rootSchema;
+  final OptiqSchema rootSchema;
   final Function0<OptiqPrepare> prepareFactory;
   final OptiqServer server = new OptiqServerImpl();
 
@@ -81,7 +81,7 @@ abstract class OptiqConnectionImpl
    * @param typeFactory Type factory, or null
    */
   protected OptiqConnectionImpl(Driver driver, AvaticaFactory factory,
-      String url, Properties info, OptiqRootSchema rootSchema,
+      String url, Properties info, OptiqSchema rootSchema,
       JavaTypeFactory typeFactory) {
     super(driver, factory, url, info);
     OptiqConnectionConfig cfg = new OptiqConnectionConfigImpl(info);
@@ -94,7 +94,8 @@ abstract class OptiqConnectionImpl
       this.typeFactory = new JavaTypeFactoryImpl(typeSystem);
     }
     this.rootSchema =
-        rootSchema != null ? rootSchema : OptiqSchema.createRootSchema(true);
+        rootSchema != null ? rootSchema : CachingOptiqSchema
+            .createRootSchema(true);
 
     this.properties.put(InternalProperty.CASE_SENSITIVE, cfg.caseSensitive());
     this.properties.put(InternalProperty.UNQUOTED_CASING, cfg.unquotedCasing());
@@ -369,7 +370,7 @@ abstract class OptiqConnectionImpl
       return connection.typeFactory;
     }
 
-    public OptiqRootSchema getRootSchema() {
+    public OptiqSchema getRootSchema() {
       return connection.rootSchema;
     }
 

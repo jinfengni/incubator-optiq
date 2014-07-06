@@ -274,7 +274,7 @@ public final class Schemas {
         return typeFactory;
       }
 
-      public OptiqRootSchema getRootSchema() {
+      public OptiqSchema getRootSchema() {
         return schema.root();
       }
 
@@ -352,10 +352,10 @@ public final class Schemas {
 
   private static void gatherLattices(OptiqSchema schema,
       List<OptiqSchema.LatticeEntry> list) {
-    list.addAll(schema.getLatticeMap().values());
-    for (OptiqSchema subSchema : schema.getSubSchemaMap().values()) {
-      gatherLattices(subSchema, list);
-    }
+//    list.addAll(schema.getLatticeMap().values());
+//    for (OptiqSchema subSchema : schema.getSubSchemaMap().values()) {
+//      gatherLattices(subSchema, list);
+//    }
   }
 
   public static OptiqSchema subSchema(OptiqSchema schema, List<String> names) {

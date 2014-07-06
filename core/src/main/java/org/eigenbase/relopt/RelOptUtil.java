@@ -2871,7 +2871,7 @@ public abstract class RelOptUtil {
     if (!extraLeftExprs.isEmpty()) {
       final List<RelDataTypeField> fields =
           leftRel.getRowType().getFieldList();
-      leftRel = CalcRel.createProject(
+      leftRel = RelOptUtil.createProject(
           leftRel,
           new AbstractList<Pair<RexNode, String>>() {
             @Override
@@ -2898,7 +2898,7 @@ public abstract class RelOptUtil {
       final List<RelDataTypeField> fields =
           rightRel.getRowType().getFieldList();
       final int newLeftCount = leftCount + extraLeftExprs.size();
-      rightRel = CalcRel.createProject(
+      rightRel = RelOptUtil.createProject(
           rightRel,
           new AbstractList<Pair<RexNode, String>>() {
             @Override

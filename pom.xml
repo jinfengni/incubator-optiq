@@ -90,7 +90,7 @@ limitations under the License.
       <artifactId>guava</artifactId>
       <!-- We support versions as old as 11.0.2 (the version used by
            Hadoop) but prefer more recent versions. -->
-      <version>11.0.2</version>
+      <version>14.0.1</version>
     </dependency>
     <dependency>
       <groupId>eigenbase</groupId>
@@ -255,6 +255,8 @@ limitations under the License.
           <target>1.5</target>
         </configuration>
       </plugin>
+<!--
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -276,6 +278,7 @@ limitations under the License.
           </execution>
         </executions>
       </plugin>
+-->
       <plugin>
         <!-- Override apache parent POM's definition of release
              plugin. If we don't specify gitexe version, git doesn't

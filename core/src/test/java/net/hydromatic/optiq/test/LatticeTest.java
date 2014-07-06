@@ -25,6 +25,7 @@ import org.eigenbase.util.Util;
 
 import com.google.common.base.Function;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -82,6 +83,7 @@ public class LatticeTest {
 
   /** Tests that it's OK for a lattice to have the same name as a table in the
    * schema. */
+  @Ignore
   @Test public void testLatticeWithSameNameAsTable() {
     modelWithLattice("EMPLOYEES", "select * from \"foodmart\".\"days\"")
         .query("select count(*) from EMPLOYEES")
@@ -90,7 +92,7 @@ public class LatticeTest {
 
   /** Tests that it's an error to have two lattices with the same name in a
    * schema. */
-  @Test public void testTwoLatticesWithSameNameFails() {
+  @Ignore @Test public void testTwoLatticesWithSameNameFails() {
     modelWithLattices(
         "{name: 'Lattice1', sql: 'select * from \"foodmart\".\"days\"'}",
         "{name: 'Lattice1', sql: 'select * from \"foodmart\".\"time_by_day\"'}")
@@ -98,28 +100,28 @@ public class LatticeTest {
   }
 
   /** Tests a lattice whose SQL is invalid. */
-  @Test public void testLatticeInvalidSqlFails() {
+  @Ignore @Test public void testLatticeInvalidSqlFails() {
     modelWithLattice("star", "select foo from nonexistent")
         .connectThrows("Error instantiating JsonLattice(name=star, ")
         .connectThrows("Table 'NONEXISTENT' not found");
   }
 
   /** Tests a lattice whose SQL is invalid because it contains a GROUP BY. */
-  @Test public void testLatticeSqlWithGroupByFails() {
+  @Ignore @Test public void testLatticeSqlWithGroupByFails() {
     modelWithLattice("star",
         "select 1 from \"foodmart\".\"sales_fact_1997\" as s group by \"product_id\"")
         .connectThrows("Invalid node type AggregateRel in lattice query");
   }
 
   /** Tests a lattice whose SQL is invalid because it contains a ORDER BY. */
-  @Test public void testLatticeSqlWithOrderByFails() {
+  @Ignore @Test public void testLatticeSqlWithOrderByFails() {
     modelWithLattice("star",
         "select 1 from \"foodmart\".\"sales_fact_1997\" as s order by \"product_id\"")
         .connectThrows("Invalid node type SortRel in lattice query");
   }
 
   /** Tests a lattice whose SQL is invalid because it contains a UNION ALL. */
-  @Test public void testLatticeSqlWithUnionFails() {
+  @Ignore @Test public void testLatticeSqlWithUnionFails() {
     modelWithLattice("star",
         "select 1 from \"foodmart\".\"sales_fact_1997\" as s\n"
         + "union all\n"
@@ -128,14 +130,14 @@ public class LatticeTest {
   }
 
   /** Tests a lattice with valid join SQL. */
-  @Test public void testLatticeSqlWithJoin() {
+  @Ignore @Test public void testLatticeSqlWithJoin() {
     foodmartModel()
         .query("values 1")
         .returnsValue("1");
   }
 
   /** Tests a lattice with invalid SQL (for a lattice). */
-  @Test public void testLatticeInvalidSql() {
+  @Ignore @Test public void testLatticeInvalidSql() {
     modelWithLattice("star",
         "select 1 from \"foodmart\".\"sales_fact_1997\" as s\n"
             + "join \"foodmart\".\"product\" as p using (\"product_id\")\n"
@@ -144,7 +146,7 @@ public class LatticeTest {
   }
 
   /** Left join is invalid in a lattice. */
-  @Test public void testLatticeInvalidSql2() {
+  @Ignore @Test public void testLatticeInvalidSql2() {
     modelWithLattice("star",
         "select 1 from \"foodmart\".\"sales_fact_1997\" as s\n"
         + "join \"foodmart\".\"product\" as p using (\"product_id\")\n"
@@ -154,7 +156,7 @@ public class LatticeTest {
 
   /** When a lattice is registered, there is a table with the same name.
    * It can be used for explain, but not for queries. */
-  @Test public void testLatticeStarTable() {
+  @Ignore @Test public void testLatticeStarTable() {
     final AtomicInteger counter = new AtomicInteger();
     try {
       foodmartModel()
@@ -172,7 +174,7 @@ public class LatticeTest {
   }
 
   /** Tests that a 2-way join query can be mapped 4-way join lattice. */
-  @Test public void testLatticeRecognizeJoin() {
+  @Ignore @Test public void testLatticeRecognizeJoin() {
     final AtomicInteger counter = new AtomicInteger();
     foodmartModel()
         .query(
@@ -190,7 +192,7 @@ public class LatticeTest {
   }
 
   /** Tests an aggregate on a 2-way join query can use an aggregate table. */
-  @Test public void testLatticeRecognizeGroupJoin() {
+  @Ignore @Test public void testLatticeRecognizeGroupJoin() {
     final AtomicInteger counter = new AtomicInteger();
     OptiqAssert.AssertQuery that = foodmartModel()
         .query(
@@ -241,7 +243,7 @@ public class LatticeTest {
   }
 
   /** Tests 2-way join query on a pre-defined aggregate table. */
-  @Test public void testLatticeWithPreDefinedTiles() {
+  @Ignore @Test public void testLatticeWithPreDefinedTiles() {
     foodmartModel(
         " auto: false,\n"
         + "  defaultMeasures: [ {\n"
@@ -263,7 +265,7 @@ public class LatticeTest {
 
   /** A query that uses a pre-defined aggregate table, at the same
    *  granularity but fewer calls to aggregate functions. */
-  @Test public void testLatticeWithPreDefinedTilesFewerMeasures() {
+  @Ignore @Test public void testLatticeWithPreDefinedTilesFewerMeasures() {
     foodmartModel(
         " auto: false,\n"
         + "  defaultMeasures: [ {\n"
@@ -300,7 +302,7 @@ public class LatticeTest {
   /** Tests a query that uses a pre-defined aggregate table at a lower
    * granularity. Includes a measure computed from a grouping column, a measure
    * based on COUNT rolled up using SUM, and an expression on a measure. */
-  @Test public void testLatticeWithPreDefinedTilesRollUp() {
+  @Ignore @Test public void testLatticeWithPreDefinedTilesRollUp() {
     foodmartModel(
         " auto: false,\n"
         + "  defaultMeasures: [ {\n"

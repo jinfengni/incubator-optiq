@@ -30,8 +30,6 @@ import java.util.jar.*;
 import java.util.logging.*;
 import java.util.regex.*;
 
-import javax.annotation.Nullable;
-
 import net.hydromatic.linq4j.Ord;
 
 import com.google.common.base.Function;
@@ -2182,7 +2180,7 @@ public class Util {
     final Collection<Map.Entry<K, V>> entries =
         Collections2.transform(values,
             new Function<V, Map.Entry<K, V>>() {
-              public Map.Entry<K, V> apply(@Nullable V input) {
+              public Map.Entry<K, V> apply( V input) {
                 return Pair.of(function.apply(input), input);
               }
             });

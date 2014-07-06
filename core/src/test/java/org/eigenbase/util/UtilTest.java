@@ -23,8 +23,6 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.*;
 
-import javax.annotation.Nullable;
-
 import org.eigenbase.resource.Resources;
 import org.eigenbase.sql.*;
 import org.eigenbase.sql.util.*;
@@ -1316,7 +1314,7 @@ public class UtilTest {
     final List<String> values  = Lists.newArrayList("abCde", "X", "y");
     final Map<String, String> map = Util.asIndexMap(values,
         new Function<String, String>() {
-          public String apply(@Nullable String input) {
+          public String apply(String input) {
             return input.toUpperCase();
           }
         });
