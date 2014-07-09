@@ -196,6 +196,13 @@ public abstract class PushFilterPastJoinRule extends RelOptRule {
     newJoinRel = RelOptUtil.createCastRel(newJoinRel, join.getRowType(),
         false, projectFactory);
 
+    if (newJoinRel instanceof JoinRel) {
+      newJoinRel = RelOptUtil.pushExpInEqualJoinCondIntoProj(join.getCluster(),
+          ((JoinRelBase) newJoinRel).getCondition(),
+          ((JoinRelBase) newJoinRel).getJoinType(),
+          leftRel, rightRel);
+    }
+
     // create a FilterRel on top of the join if needed
     RelNode newRel =
         createFilterOnRel(rexBuilder, newJoinRel, aboveFilters);
@@ -266,6 +273,7 @@ public abstract class PushFilterPastJoinRule extends RelOptRule {
       perform(call, filter, join);
     }
   }
+
 }
 
 // End PushFilterPastJoinRule.java
