@@ -57,9 +57,9 @@ public class SimpleOptiqSchema extends OptiqSchema {
 
   @Override
   public OptiqSchema getSubSchema(String schemaName, boolean caseSensitive) {
-    Schema s = schema.getSubSchema(name);
+    Schema s = schema.getSubSchema(schemaName);
     if (s != null) {
-      return new SimpleOptiqSchema(this, s, name);
+      return new SimpleOptiqSchema(this, s, schemaName);
     }
     return subSchemas.get(schemaName);
   }

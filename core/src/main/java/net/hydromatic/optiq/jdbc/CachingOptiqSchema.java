@@ -17,6 +17,8 @@
 */
 package net.hydromatic.optiq.jdbc;
 
+import net.hydromatic.linq4j.Linq4j;
+
 import net.hydromatic.optiq.*;
 import net.hydromatic.optiq.Schema;
 import net.hydromatic.optiq.SchemaPlus;
