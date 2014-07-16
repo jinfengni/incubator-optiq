@@ -165,9 +165,7 @@ public class PlannerImpl implements Planner {
 
   public SqlNode validate(SqlNode sqlNode) throws ValidationException {
     ensure(State.STATE_3_PARSED);
-    this.validator =
-        new OptiqSqlValidator(
-            operatorTable, createCatalogReader(), typeFactory);
+    this.validator = createSqlValidator(createCatalogReader());
     try {
       validatedSqlNode = validator.validate(sqlNode);
     } catch (RuntimeException e) {
@@ -181,11 +179,7 @@ public class PlannerImpl implements Planner {
     ensure(State.STATE_4_VALIDATED);
     assert validatedSqlNode != null;
     final SqlToRelConverter sqlToRelConverter =
-        new SqlToRelConverter(
-            new ViewExpanderImpl(), validator, createCatalogReader(), planner,
-            createRexBuilder(), convertletTable);
-    sqlToRelConverter.setTrimUnusedFields(false);
-    sqlToRelConverter.enableTableAccessConversion(false);
+        getSqlToRelConverter(validator, createCatalogReader());
     rel = sqlToRelConverter.convertQuery(validatedSqlNode, false, true);
     rel = sqlToRelConverter.flattenTypes(rel, true);
     rel = RelDecorrelator.decorrelateQuery(rel);
@@ -209,17 +203,36 @@ public class PlannerImpl implements Planner {
 
       final OptiqCatalogReader catalogReader =
           createCatalogReader().withSchemaPath(schemaPath);
-      final SqlValidator validator = new OptiqSqlValidator(operatorTable,
-          catalogReader, typeFactory);
-      final SqlNode validatedSqlNode = validator.validate(sqlNode);
+      SqlValidator validator = createSqlValidator(catalogReader);
+      SqlNode validatedSqlNode = validator.validate(sqlNode);
 
-      final SqlToRelConverter sqlToRelConverter = new SqlToRelConverter(
-          null, validator, catalogReader, planner,
-          createRexBuilder(), convertletTable);
-      sqlToRelConverter.setTrimUnusedFields(false);
+      SqlToRelConverter sqlToRelConverter =
+          getSqlToRelConverter(validator, catalogReader);
 
-      return sqlToRelConverter.convertQuery(validatedSqlNode, true, false);
+      RelNode relNode = sqlToRelConverter.convertQuery(
+          validatedSqlNode, true, false);
+      relNode = sqlToRelConverter.flattenTypes(relNode, true);
+      relNode = sqlToRelConverter.decorrelate(validatedSqlNode, relNode);
+
+      return relNode;
     }
+  }
+
+  private OptiqSqlValidator createSqlValidator(
+      OptiqCatalogReader catalogReader) {
+    return new OptiqSqlValidator(operatorTable, catalogReader, typeFactory);
+  }
+
+  private SqlToRelConverter getSqlToRelConverter(SqlValidator validator,
+      OptiqCatalogReader catalogReader) {
+    SqlToRelConverter sqlToRelConverter = new SqlToRelConverter(
+        new ViewExpanderImpl(), validator, catalogReader, planner,
+        createRexBuilder(), convertletTable);
+
+    sqlToRelConverter.setTrimUnusedFields(false);
+    sqlToRelConverter.enableTableAccessConversion(false);
+
+    return sqlToRelConverter;
   }
 
   // OptiqCatalogReader is stateless; no need to store one
