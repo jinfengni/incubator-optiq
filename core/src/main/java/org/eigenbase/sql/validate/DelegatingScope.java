@@ -144,33 +144,13 @@ public abstract class DelegatingScope implements SqlValidatorScope {
           findQualifyingTableName(columnName, identifier);
 
       // todo: do implicit collation here
-      final SqlParserPos pos = identifier.getParserPosition();
-      SqlIdentifier expanded =
-          new SqlIdentifier(
-              ImmutableList.of(tableName, columnName),
-              null,
-              pos,
-              ImmutableList.of(SqlParserPos.ZERO, pos));
-      validator.setOriginal(expanded, identifier);
-      return expanded;
+      return resolveSqlIdentifier(tableName, columnName, identifier, false);
 
     case 2:
       tableName = identifier.names.get(0);
-      final SqlValidatorNamespace fromNs = resolve(tableName, null, null);
-      if (fromNs == null) {
-        throw validator.newValidationError(identifier.getComponent(0),
-            RESOURCE.tableNameNotFound(tableName));
-      }
       columnName = identifier.names.get(1);
-      final RelDataType fromRowType = fromNs.getRowType();
-      final RelDataTypeField field =
-          validator.catalogReader.field(fromRowType, columnName);
-      if (field != null) {
-        return identifier; // it was fine already
-      } else {
-        throw validator.newValidationError(identifier.getComponent(1),
-            RESOURCE.columnNotFoundInTable(columnName, tableName));
-      }
+
+      return resolveSqlIdentifier(tableName, columnName, identifier, true);
 
     default:
       // NOTE jvs 26-May-2004:  lengths greater than 2 are possible
@@ -202,6 +182,66 @@ public abstract class DelegatingScope implements SqlValidatorScope {
    */
   public SqlValidatorScope getParent() {
     return parent;
+  }
+
+  private SqlIdentifier resolveSqlIdentifier(String tableName,
+                                             String columnName,
+                                             SqlIdentifier identifier,
+                                             boolean tblNamePrefixed) {
+    final SqlValidatorNamespace fromNs = resolve(tableName, null, null);
+    if (fromNs == null) {
+      SqlIdentifier id = identifier;
+      if (tblNamePrefixed) {
+        id = identifier.getComponent(0);
+      }
+      throw validator.newValidationError(id,
+          RESOURCE.tableNameNotFound(tableName));
+    }
+    final RelDataType fromRowType = fromNs.getRowType();
+    final RelDataTypeField field =
+        validator.catalogReader.field(fromRowType, columnName);
+    if (field != null) {
+      if (field.getName().startsWith("*") && !columnName.startsWith("*")) {
+        // Make sure fromRowType only contains one star column.
+        // Having more than one star columns implies ambiguous column.
+        if (getStarColumnCount(fromRowType) > 1) {
+          throw validator.newValidationError(identifier,
+              RESOURCE.columnAmbiguous(columnName));
+        }
+        return new SqlIdentifier(
+            ImmutableList.of(tableName, field.getName()),
+            identifier.getParserPosition());
+      }
+      if (tblNamePrefixed) {
+        return identifier; // it was fine already
+      } else {
+        return
+            new SqlIdentifier(
+                ImmutableList.of(tableName, columnName),
+                null,
+                identifier.getParserPosition(),
+                ImmutableList.of(SqlParserPos.ZERO,
+                    identifier.getParserPosition()));
+      }
+    } else {
+      SqlIdentifier id = identifier;
+      if (tblNamePrefixed) {
+        id = identifier.getComponent(1);
+      }
+      throw validator.newValidationError(id,
+          RESOURCE.columnNotFoundInTable(columnName, tableName));
+    }
+  }
+
+  private int getStarColumnCount(RelDataType rowType) {
+    int count = 0;
+    for (String fieldName : rowType.getFieldNames()) {
+      if (fieldName.startsWith("*")) {
+        count++;
+      }
+    }
+
+    return count;
   }
 }
 

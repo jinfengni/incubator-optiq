@@ -3831,7 +3831,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         "select *\n"
         + " from emp\n"
         + " join dept on emp.deptno = dept.deptno\n"
-        + " and ^sum(sal) over (partition by deptno\n"
+        + " and ^sum(sal) over (partition by dept.deptno\n"
         + "    order by empno\n"
         + "    rows 3 preceding)^ = dept.deptno + 40\n"
         + "order by deptno",
@@ -5428,7 +5428,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     // Group by
     checkFails(
         "select 1 from emp group by deptno order by ^empno^",
-        "Expression 'EMP\\.EMPNO' is not being grouped");
+        "Expression 'EMPNO' is not being grouped");
 
     // order by can contain aggregate expressions
     check(
@@ -5440,7 +5440,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
 
     checkFails(
         "select sum(sal) from emp having count(*) > 3 order by ^empno^",
-        "Expression 'EMP\\.EMPNO' is not being grouped");
+        "Expression 'EMPNO' is not being grouped");
 
     check(
         "select sum(sal) from emp having count(*) > 3 order by sum(deptno)");
@@ -5449,11 +5449,11 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
 
     checkFails(
         "select distinct deptno from emp group by deptno order by ^empno^",
-        "Expression 'EMP\\.EMPNO' is not in the select clause");
+        "Expression 'EMPNO' is not in the select clause");
 
     checkFails(
         "select distinct deptno from emp group by deptno order by deptno, ^empno^",
-        "Expression 'EMP\\.EMPNO' is not in the select clause");
+        "Expression 'EMPNO' is not in the select clause");
 
     check(
         "select distinct deptno from emp group by deptno order by deptno");
@@ -5484,7 +5484,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     checkFails(
         "select distinct cast(empno as bigint) "
         + "from emp order by ^empno^",
-        "Expression 'EMP\\.EMPNO' is not in the select clause");
+        "Expression 'EMPNO' is not in the select clause");
     checkFails(
         "select distinct cast(empno as bigint) "
         + "from emp order by ^emp.empno^",
@@ -6109,10 +6109,10 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     // similar validation for SELECT DISTINCT and GROUP BY
     checkFails(
         "SELECT deptno FROM emp GROUP BY deptno ORDER BY deptno, ^empno^",
-        "Expression 'EMP\\.EMPNO' is not being grouped");
+        "Expression 'EMPNO' is not being grouped");
     checkFails(
         "SELECT DISTINCT deptno from emp ORDER BY deptno, ^empno^",
-        "Expression 'EMP\\.EMPNO' is not in the select clause");
+        "Expression 'EMPNO' is not in the select clause");
     check("SELECT DISTINCT deptno from emp ORDER BY deptno + 2");
     if (false) { // Hersker 2008917: Julian will fix immediately after
       // integration
@@ -6125,7 +6125,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     // GROUP BY is present.
     checkFails(
         "SELECT DISTINCT deptno FROM emp GROUP BY deptno, empno ORDER BY deptno, ^empno^",
-        "Expression 'EMP\\.EMPNO' is not in the select clause");
+        "Expression 'EMPNO' is not in the select clause");
 
     // redundant distinct; same query is in unitsql/optimizer/distinct.sql
     check(
