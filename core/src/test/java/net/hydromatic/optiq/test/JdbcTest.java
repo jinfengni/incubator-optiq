@@ -747,6 +747,7 @@ public class JdbcTest {
   /**
    * Make sure that the properties look sane.
    */
+  @Ignore
   @Test public void testVersion() throws ClassNotFoundException, SQLException {
     Class.forName("net.hydromatic.optiq.jdbc.Driver");
     Connection connection = DriverManager.getConnection("jdbc:optiq:");
