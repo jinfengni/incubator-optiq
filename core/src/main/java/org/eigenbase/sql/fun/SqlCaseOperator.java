@@ -206,6 +206,21 @@ public class SqlCaseOperator extends SqlOperator {
     return inferTypeFromValidator((SqlCallBinding) opBinding);
   }
 
+  private RelDataType leastRestrictiveHelper(
+      RelDataTypeFactory typeFactory, List<RelDataType> types) {
+    for (RelDataType type : types) {
+      SqlTypeName typeName = type.getSqlTypeName();
+      if (typeName == null) {
+        continue;
+      }
+
+      if (typeName == SqlTypeName.ANY) {
+        return type;
+      }
+    }
+    return typeFactory.leastRestrictive(types);
+  }
+
   private RelDataType inferTypeFromValidator(
       SqlCallBinding callBinding) {
     SqlCase caseCall = (SqlCase) callBinding.getCall();
@@ -228,9 +243,8 @@ public class SqlCaseOperator extends SqlOperator {
       nullList.add(elseOp);
     }
 
-    RelDataType ret =
-        callBinding.getTypeFactory().leastRestrictive(
-            argTypes);
+    RelDataType ret = leastRestrictiveHelper(
+        callBinding.getTypeFactory(), argTypes);
     if (null == ret) {
       throw callBinding.newValidationError(RESOURCE.illegalMixingOfTypes());
     }
@@ -252,7 +266,7 @@ public class SqlCaseOperator extends SqlOperator {
     }
 
     thenTypes.add(Iterables.getLast(argTypes));
-    return typeFactory.leastRestrictive(thenTypes);
+    return leastRestrictiveHelper(typeFactory, thenTypes);
   }
 
   public SqlOperandCountRange getOperandCountRange() {
