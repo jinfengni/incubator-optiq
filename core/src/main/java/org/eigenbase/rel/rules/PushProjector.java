@@ -552,7 +552,7 @@ public class PushProjector {
                     field.e.getType(), field.i), field.e.getName()));
       }
     }
-    return CalcRel.createProject(
+    return RelOptUtil.createProject(
         projChild,
         Pair.left(projects),
         Pair.right(projects),
