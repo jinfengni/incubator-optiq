@@ -47,7 +47,7 @@ public class PushProjectPastJoinRule extends RelOptRule {
    * @param preserveExprCondition Condition for expressions that should be
    *                              preserved in the projection
    */
-  private PushProjectPastJoinRule(
+  protected PushProjectPastJoinRule(
       PushProjector.ExprCondition preserveExprCondition) {
     super(
         operand(ProjectRel.class,
