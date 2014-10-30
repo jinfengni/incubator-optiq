@@ -43,7 +43,7 @@ public class PushProjectPastFilterRule extends RelOptRule {
    * @param preserveExprCondition Condition for expressions that should be
    *                              preserved in the projection
    */
-  private PushProjectPastFilterRule(
+  protected PushProjectPastFilterRule(
       PushProjector.ExprCondition preserveExprCondition) {
     super(
         operand(
