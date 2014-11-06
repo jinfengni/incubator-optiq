@@ -707,6 +707,19 @@ public class StandardConvertletTable extends ReflectiveConvertletTable {
   }
 
   private void ensureSameType(SqlRexContext cx, final List<RexNode> exprs) {
+
+    /* Don't inject casts if one of the type is 'ANY', this may inject
+     * casts in the wrong direction.
+     * For eg: If the column that is of 'ANY' type is ultimately resolved to
+     * FLOAT and the other known type is 'INT' we would end up casting FLOAT
+     * to INT which is not desirable behavior
+     */
+    for (RexNode expr : exprs) {
+      if (expr.getType().getSqlTypeName() == SqlTypeName.ANY) {
+        return;
+      }
+    }
+
     RelDataType type =
         cx.getTypeFactory().leastRestrictive(
             new AbstractList<RelDataType>() {
