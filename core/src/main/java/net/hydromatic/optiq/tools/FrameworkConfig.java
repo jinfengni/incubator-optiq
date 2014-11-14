@@ -24,6 +24,7 @@ import org.eigenbase.relopt.RelOptCostFactory;
 import org.eigenbase.relopt.RelTraitDef;
 import org.eigenbase.reltype.RelDataTypeSystem;
 import org.eigenbase.sql.SqlOperatorTable;
+import org.eigenbase.sql.parser.SqlParser;
 import org.eigenbase.sql.parser.SqlParserImplFactory;
 import org.eigenbase.sql2rel.SqlRexConvertletTable;
 
@@ -41,6 +42,11 @@ public interface FrameworkConfig {
    * and quoted identifier syntax.
    */
   Lex getLex();
+
+  /**
+   * The configuration of SQL parser
+   */
+  SqlParser.ParserConfig getParserConfig();
 
   /**
    * Provides the parser factory that creates the SqlParser used in parsing

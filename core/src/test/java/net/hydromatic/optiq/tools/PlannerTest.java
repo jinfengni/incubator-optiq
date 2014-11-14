@@ -35,6 +35,7 @@ import org.eigenbase.reltype.RelDataTypeFactory;
 import org.eigenbase.sql.*;
 import org.eigenbase.sql.fun.SqlStdOperatorTable;
 import org.eigenbase.sql.parser.SqlParseException;
+import org.eigenbase.sql.parser.SqlParser;
 import org.eigenbase.sql.type.*;
 import org.eigenbase.sql.util.ChainedSqlOperatorTable;
 import org.eigenbase.sql.util.ListSqlOperatorTable;
@@ -177,7 +178,8 @@ public class PlannerTest {
   private Planner getPlanner(List<RelTraitDef> traitDefs, Program... programs) {
     final SchemaPlus rootSchema = Frameworks.createRootSchema(true);
     final FrameworkConfig config = Frameworks.newConfigBuilder()
-        .lex(Lex.ORACLE)
+        .parserConfig(new SqlParser.ParserConfigImpl(Lex.ORACLE, //
+            SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH)) //
         .defaultSchema(
             OptiqAssert.addSchema(rootSchema, OptiqAssert.SchemaSpec.HR))
         .traitDefs(traitDefs)
@@ -563,7 +565,8 @@ public class PlannerTest {
   private void checkBushy(String sql, String expected) throws Exception {
     final SchemaPlus rootSchema = Frameworks.createRootSchema(true);
     final FrameworkConfig config = Frameworks.newConfigBuilder()
-        .lex(Lex.ORACLE)
+        .parserConfig(new SqlParser.ParserConfigImpl(Lex.ORACLE, //
+            SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH)) //
         .defaultSchema(
             OptiqAssert.addSchema(rootSchema,
                 OptiqAssert.SchemaSpec.CLONE_FOODMART))
@@ -681,7 +684,8 @@ public class PlannerTest {
             new ReflectiveSchema(new TpchSchema()));
 
     final FrameworkConfig config = Frameworks.newConfigBuilder()
-        .lex(Lex.MYSQL)
+        .parserConfig(new SqlParser.ParserConfigImpl(Lex.MYSQL, //
+            SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH)) //
         .defaultSchema(schema)
         .programs(Programs.ofRules(Programs.RULE_SET))
         .build();

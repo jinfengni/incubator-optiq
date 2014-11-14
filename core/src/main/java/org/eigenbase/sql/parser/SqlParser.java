@@ -16,32 +16,53 @@
  */
 package org.eigenbase.sql.parser;
 
-import java.io.*;
+import java.io.StringReader;
 
-import org.eigenbase.sql.*;
-import org.eigenbase.sql.parser.impl.*;
-import org.eigenbase.util.*;
+import org.eigenbase.sql.SqlNode;
+import org.eigenbase.sql.parser.impl.SqlParserImpl;
+import org.eigenbase.util.EigenbaseContextException;
 
 import net.hydromatic.avatica.Casing;
 import net.hydromatic.avatica.Quoting;
+
+import net.hydromatic.optiq.config.Lex;
+
 
 /**
  * A <code>SqlParser</code> parses a SQL statement.
  */
 public class SqlParser {
   //~ Instance fields --------------------------------------------------------
+  public static final int DEFAULT_IDENTIFIER_MAX_LENGTH = 128;
 
   private final SqlAbstractParserImpl parser;
   private String originalInput;
 
   //~ Constructors -----------------------------------------------------------
   private SqlParser(String s, SqlAbstractParserImpl parser,
-      Quoting quoting, Casing unquotedCasing, Casing quotedCasing) {
+      ParserConfig config) {
+    this(s, parser, config.getLex().quoting, config.getLex().unquotedCasing,
+        config.getLex().quotedCasing, config.getIdentifierMaxLength());
+  }
+
+  //~ Constructors -----------------------------------------------------------
+  private SqlParser(String s, SqlAbstractParserImpl parser,
+                    Quoting quoting, Casing unquotedCasing,
+                    Casing quotedCasing) {
+    this(s, parser, quoting, unquotedCasing, quotedCasing,
+        DEFAULT_IDENTIFIER_MAX_LENGTH);
+  }
+    //~ Constructors -----------------------------------------------------------
+  private SqlParser(String s, SqlAbstractParserImpl parser,
+                    Quoting quoting, Casing unquotedCasing,
+                    Casing quotedCasing,
+                    int identifierMaxLength) {
     this.originalInput = s;
     this.parser = parser;
     parser.setTabSize(1);
     parser.setQuotedCasing(quotedCasing);
     parser.setUnquotedCasing(unquotedCasing);
+    parser.setIdentifierMaxLength(identifierMaxLength);
     switch (quoting) {
     case DOUBLE_QUOTE:
       parser.switchTo("DQID");
@@ -55,6 +76,7 @@ public class SqlParser {
     }
   }
 
+
   //~ Methods ----------------------------------------------------------------
 
   /**
@@ -65,31 +87,37 @@ public class SqlParser {
    * @return A <code>SqlParser</code> object.
    */
   public static SqlParser create(String s) {
-    return create(SqlParserImpl.FACTORY, s, Quoting.DOUBLE_QUOTE,
-        Casing.TO_UPPER, Casing.UNCHANGED);
+    return create(SqlParserImpl.FACTORY, s,
+        new ParserConfigImpl(Lex.ORACLE, DEFAULT_IDENTIFIER_MAX_LENGTH));
   }
 
-  /**
-   * Creates a <code>SqlParser</code> to parse the given string using the
-   * parser implementation created from given {@link SqlParserImplFactory}
-   * with given quoting syntax and casing policies for identifiers.
-   *
-   * @param parserFactory {@link SqlParserImplFactory} to get the parser
-   *     implementation.
-   * @param s An SQL statement or expression to parse.
-   * @param quoting Syntax for quoting identifiers in SQL statements.
-   * @param unquotedCasing Policy for converting case of <i>unquoted</i>
-   *     identifiers.
-   * @param quotedCasing Policy for converting case of <i>quoted</i>
-   *     identifiers.
-   * @return A <code>SqlParser</code> object.
-   */
   public static SqlParser create(SqlParserImplFactory parserFactory, String s,
-      Quoting quoting, Casing unquotedCasing, Casing quotedCasing) {
+                                 Quoting quoting, Casing unquotedCasing,
+                                 Casing quotedCasing) {
+    SqlAbstractParserImpl parser =
+        parserFactory.getParser(new StringReader(s));
+
+    return new SqlParser(s, parser, quoting, unquotedCasing, quotedCasing);
+  }
+
+      /**
+       * Creates a <code>SqlParser</code> to parse the given string using the
+       * parser implementation created from given {@link SqlParserImplFactory}
+       * with given quoting syntax and casing policies for identifiers.
+       *
+       * @param parserFactory {@link SqlParserImplFactory} to get the parser
+       *     implementation.
+       * @param s An SQL statement or expression to parse.
+       * @param config the parer configuration (lex,
+       *                                   identifier max length etc).
+       * @return A <code>SqlParser</code> object.
+       */
+  public static SqlParser create(SqlParserImplFactory parserFactory, String s,
+                                 ParserConfig config) {
     SqlAbstractParserImpl parser = parserFactory.getParser(
         new StringReader(s));
 
-    return new SqlParser(s, parser, quoting, unquotedCasing, quotedCasing);
+    return new SqlParser(s, parser, config);
   }
 
   /**
@@ -159,6 +187,51 @@ public class SqlParser {
   public SqlAbstractParserImpl.Metadata getMetadata() {
     return parser.getMetadata();
   }
+
+  /**
+   * Interface to define the configuration for a SQL parser.
+   */
+  public interface ParserConfig {
+    int getIdentifierMaxLength();
+    Casing getQuotedCasing();
+    Casing getUnquotedCasing();
+    Quoting getQuoting();
+    Lex getLex();
+  }
+
+  /**
+   * Implementation of ParserConfig interface.
+   */
+  public static class ParserConfigImpl implements ParserConfig {
+    int identifierMaxLength;
+    Lex lex;
+
+    public ParserConfigImpl(Lex lex, int identifierMaxLength) {
+      this.identifierMaxLength = identifierMaxLength;
+      this.lex = lex;
+    }
+
+    public int getIdentifierMaxLength() {
+      return this.identifierMaxLength;
+    }
+
+    public Casing getQuotedCasing() {
+      return this.lex.quotedCasing;
+    }
+
+    public Casing getUnquotedCasing() {
+      return this.lex.unquotedCasing;
+    }
+
+    public Quoting getQuoting() {
+      return this.lex.quoting;
+    }
+
+    public Lex getLex() {
+      return this.lex;
+    }
+  }
+
 }
 
 // End SqlParser.java
