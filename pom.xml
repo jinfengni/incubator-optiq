@@ -5,7 +5,7 @@
   <groupId>net.hydromatic</groupId>
   <artifactId>optiq-parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.9-drill-r8</version>
+  <version>0.9-drill-r9</version>
 
   <!-- More project information. -->
   <name>optiq-parent</name>

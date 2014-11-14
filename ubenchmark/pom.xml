@@ -3,7 +3,7 @@
   <parent>
     <artifactId>optiq-parent</artifactId>
     <groupId>net.hydromatic</groupId>
-    <version>0.9-drill-r8</version>
+    <version>0.9-drill-r9</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
