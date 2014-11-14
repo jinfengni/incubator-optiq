@@ -32,6 +32,7 @@ import org.eigenbase.relopt.RelOptSchema;
 import org.eigenbase.relopt.RelTraitDef;
 import org.eigenbase.sql.SqlOperatorTable;
 import org.eigenbase.sql.fun.SqlStdOperatorTable;
+import org.eigenbase.sql.parser.SqlParser;
 import org.eigenbase.sql.parser.SqlParserImplFactory;
 import org.eigenbase.sql.parser.impl.SqlParserImpl;
 import org.eigenbase.sql2rel.SqlRexConvertletTable;
@@ -167,7 +168,10 @@ public class Frameworks {
     private ImmutableList<Program> programs = ImmutableList.of();
     private Context context;
     private ImmutableList<RelTraitDef> traitDefs;
-    private Lex lex = Lex.ORACLE;
+    private SqlParser.ParserConfig parserConfig =
+        new SqlParser.ParserConfigImpl(Lex.ORACLE,
+            SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH);
+
     private SchemaPlus defaultSchema;
     private RelOptCostFactory costFactory;
     private SqlParserImplFactory parserFactory = SqlParserImpl.FACTORY;
@@ -176,7 +180,7 @@ public class Frameworks {
 
     public FrameworkConfig build() {
       return new StdFrameworkConfig(context, convertletTable, operatorTable,
-          programs, traitDefs, lex, defaultSchema, costFactory, //
+          programs, traitDefs, parserConfig, defaultSchema, costFactory, //
           parserFactory);
     }
 
@@ -212,9 +216,9 @@ public class Frameworks {
       return this;
     }
 
-    public ConfigBuilder lex(Lex lex) {
-      Preconditions.checkNotNull(lex);
-      this.lex = lex;
+    public ConfigBuilder parserConfig(SqlParser.ParserConfig parserConfig) {
+      Preconditions.checkNotNull(parserConfig);
+      this.parserConfig = parserConfig;
       return this;
     }
 

@@ -25,6 +25,7 @@ import org.eigenbase.relopt.Context;
 import org.eigenbase.relopt.RelOptCostFactory;
 import org.eigenbase.relopt.RelTraitDef;
 import org.eigenbase.sql.SqlOperatorTable;
+import org.eigenbase.sql.parser.SqlParser;
 import org.eigenbase.sql.parser.SqlParserImplFactory;
 import org.eigenbase.sql2rel.SqlRexConvertletTable;
 
@@ -41,7 +42,7 @@ class StdFrameworkConfig implements FrameworkConfig {
   private final SqlOperatorTable operatorTable;
   private final ImmutableList<Program> programs;
   private final ImmutableList<RelTraitDef> traitDefs;
-  private final Lex lex;
+  private final SqlParser.ParserConfig parserConfig;
   private final SchemaPlus defaultSchema;
   private final RelOptCostFactory costFactory;
   private final SqlParserImplFactory parserFactory;
@@ -52,7 +53,7 @@ class StdFrameworkConfig implements FrameworkConfig {
       SqlOperatorTable operatorTable, //
       ImmutableList<Program> programs, //
       ImmutableList<RelTraitDef> traitDefs,
-      Lex lex, //
+      SqlParser.ParserConfig parserConfig, //
       SchemaPlus defaultSchema, //
       RelOptCostFactory costFactory, //
       SqlParserImplFactory parserFactory) {
@@ -62,14 +63,18 @@ class StdFrameworkConfig implements FrameworkConfig {
     this.operatorTable = operatorTable;
     this.programs = programs;
     this.traitDefs = traitDefs;
-    this.lex = lex;
+    this.parserConfig = parserConfig;
     this.defaultSchema = defaultSchema;
     this.costFactory = costFactory;
     this.parserFactory = parserFactory;
   }
 
   public Lex getLex() {
-    return lex;
+    return parserConfig.getLex();
+  }
+
+  public SqlParser.ParserConfig getParserConfig() {
+    return this.parserConfig;
   }
 
   public SqlParserImplFactory getParserFactory() {

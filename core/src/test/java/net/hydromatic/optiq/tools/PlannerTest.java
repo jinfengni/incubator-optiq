@@ -37,6 +37,7 @@ import org.eigenbase.reltype.RelDataTypeFactory;
 import org.eigenbase.sql.*;
 import org.eigenbase.sql.fun.SqlStdOperatorTable;
 import org.eigenbase.sql.parser.SqlParseException;
+import org.eigenbase.sql.parser.SqlParser;
 import org.eigenbase.sql.type.*;
 import org.eigenbase.sql.util.ChainedSqlOperatorTable;
 import org.eigenbase.sql.util.ListSqlOperatorTable;
@@ -181,7 +182,8 @@ public class PlannerTest {
 
   private Planner getPlanner(List<RelTraitDef> traitDefs, Program... programs) {
     return Frameworks.getPlanner(Frameworks.newConfigBuilder() //
-        .lex(Lex.ORACLE) //
+        .parserConfig(new SqlParser.ParserConfigImpl(Lex.ORACLE, //
+            SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH)) //
         .defaultSchema(createHrSchema()) //
         .traitDefs(traitDefs) //
         .programs(programs) //
@@ -581,7 +583,8 @@ public class PlannerTest {
             new ReflectiveSchema(new TpchSchema()));
 
     Planner p = Frameworks.getPlanner(Frameworks.newConfigBuilder() //
-        .lex(Lex.MYSQL) //
+        .parserConfig(new SqlParser.ParserConfigImpl(Lex.MYSQL, //
+            SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH)) //
         .defaultSchema(schema) //
         .programs(Programs.ofRules(RULE_SET)) //
         .build());

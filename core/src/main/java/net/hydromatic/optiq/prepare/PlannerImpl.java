@@ -18,7 +18,6 @@
 package net.hydromatic.optiq.prepare;
 
 import net.hydromatic.optiq.SchemaPlus;
-import net.hydromatic.optiq.config.Lex;
 import net.hydromatic.optiq.impl.java.JavaTypeFactory;
 import net.hydromatic.optiq.jdbc.OptiqSchema;
 import net.hydromatic.optiq.tools.*;
@@ -51,7 +50,10 @@ public class PlannerImpl implements Planner {
   /** Holds the trait definitions to be registered with planner. May be null. */
   private final ImmutableList<RelTraitDef> traitDefs;
 
-  private final Lex lex;
+  // private final Lex lex;
+
+  private final SqlParser.ParserConfig parserConfig;
+
   private final SqlParserImplFactory parserFactory;
 
   // Options. TODO: allow client to set these. Maybe use a ConnectionConfig.
@@ -85,7 +87,8 @@ public class PlannerImpl implements Planner {
     this.defaultSchema = config.getDefaultSchema();
     this.operatorTable = config.getOperatorTable();
     this.programs = config.getPrograms();
-    this.lex = config.getLex();
+    // this.lex = config.getLex();
+    this.parserConfig = config.getParserConfig();
     this.parserFactory = config.getParserFactory();
     this.state = State.STATE_0_CLOSED;
     this.traitDefs = config.getTraitDefs();
@@ -160,7 +163,7 @@ public class PlannerImpl implements Planner {
     }
     ensure(State.STATE_2_READY);
     SqlParser parser = SqlParser.create(parserFactory, sql,
-        lex.quoting, lex.unquotedCasing, lex.quotedCasing);
+        parserConfig);
     SqlNode sqlNode = parser.parseStmt();
     state = State.STATE_3_PARSED;
     return sqlNode;
@@ -196,7 +199,7 @@ public class PlannerImpl implements Planner {
     public RelNode expandView(RelDataType rowType, String queryString,
         List<String> schemaPath) {
       SqlParser parser = SqlParser.create(parserFactory, queryString,
-          lex.quoting, lex.unquotedCasing, lex.quotedCasing);
+          parserConfig);
       SqlNode sqlNode;
       try {
         sqlNode = parser.parseQuery();
