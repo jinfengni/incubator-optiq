@@ -1237,10 +1237,10 @@ public class SqlToRelConverter {
    * threshold of 0 forces usage of an inline table in all cases; a threshold
    * of Integer.MAX_VALUE forces usage of OR in all cases
    *
-   * @return threshold, default 20
+   * @return threshold, default 200
    */
   protected int getInSubqueryThreshold() {
-    return 20;
+    return 200;
   }
 
   /**
