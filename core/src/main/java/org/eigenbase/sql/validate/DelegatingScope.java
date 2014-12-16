@@ -212,12 +212,12 @@ public abstract class DelegatingScope implements SqlValidatorScope {
             ImmutableList.of(tableName, field.getName()),
             identifier.getParserPosition());
       }
-      if (tblNamePrefixed) {
-        return identifier; // it was fine already
+      if (columnName.equals(field.getName()) && tblNamePrefixed) {
+        return identifier; // same identifier after qualification.
       } else {
         return
             new SqlIdentifier(
-                ImmutableList.of(tableName, columnName),
+                ImmutableList.of(tableName, field.getName()),
                 null,
                 identifier.getParserPosition(),
                 ImmutableList.of(SqlParserPos.ZERO,

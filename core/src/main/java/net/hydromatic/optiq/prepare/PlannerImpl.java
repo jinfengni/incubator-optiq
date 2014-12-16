@@ -57,9 +57,6 @@ public class PlannerImpl implements Planner {
   private final SqlParserImplFactory parserFactory;
   private final SqlRexConvertletTable convertletTable;
 
-  // Options. TODO: allow client to set these. Maybe use a ConnectionConfig.
-  private boolean caseSensitive = true;
-
   private State state;
 
   // set in STATE_1_RESET
@@ -243,7 +240,7 @@ public class PlannerImpl implements Planner {
     SchemaPlus rootSchema = rootSchema(defaultSchema);
     return new OptiqCatalogReader(
         OptiqSchema.from(rootSchema),
-        caseSensitive,
+        parserConfig.caseSensitive(),
         OptiqSchema.from(defaultSchema).path(null),
         typeFactory);
   }
