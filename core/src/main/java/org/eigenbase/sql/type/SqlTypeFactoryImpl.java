@@ -428,6 +428,8 @@ public class SqlTypeFactoryImpl extends RelDataTypeFactoryImpl {
             return resultType;
           }
         }
+      } else if (typeName == SqlTypeName.ANY) {
+        resultType = createSqlType(typeName);
       } else {
         // TODO:  datetime precision details; for now we let
         // leastRestrictiveByCast handle it
