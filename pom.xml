@@ -27,7 +27,7 @@ limitations under the License.
   <groupId>org.apache.optiq</groupId>
   <artifactId>optiq</artifactId>
   <packaging>pom</packaging>
-  <version>0.9.1-incubating-SNAPSHOT</version>
+  <version>0.9-drill-r16</version>
 
   <!-- More project information. -->
   <name>Optiq</name>
