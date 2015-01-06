@@ -1977,4 +1977,58 @@ AggregateRel(group=[{0}], EXPR$1=[MAX($1)], EXPR$2=[MAX($2)])
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testGroupByCaseSubquery">
+        <Resource name="sql">
+            <![CDATA[SELECT CASE WHEN emp.empno IN (3) THEN 0 ELSE 1 END
+FROM emp
+GROUP BY (CASE WHEN emp.empno IN (3) THEN 0 ELSE 1 END)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+AggregateRel(group=[{0}])
+  ProjectRel(EXPR$0=[CASE(=($0, 3), 0, 1)])
+    TableAccessRel(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testAggCaseSubquery">
+        <Resource name="sql">
+            <![CDATA[SELECT SUM(CASE WHEN empno IN (3) THEN 0 ELSE 1 END) FROM emp]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+AggregateRel(group=[{}], EXPR$0=[SUM($0)])
+  ProjectRel($f0=[CASE(=($0, 3), 0, 1)])
+    TableAccessRel(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testAggCaseInSubquery">
+        <Resource name="sql">
+            <![CDATA[SELECT SUM(
+  CASE WHEN deptno IN (SELECT deptno FROM dept) THEN 1 ELSE 0 END)
+FROM emp]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testAggScalarSubquery">
+        <Resource name="sql">
+            <![CDATA[SELECT SUM(SELECT min(deptno) FROM dept) FROM emp]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+ProjectRel(EXPR$0=[$0])
+  JoinRel(condition=[true], joinType=[left])
+    AggregateRel(group=[{}], EXPR$0=[SUM($0)])
+      ProjectRel(EXPR$0=[$9])
+        JoinRel(condition=[true], joinType=[left])
+          TableAccessRel(table=[[CATALOG, SALES, EMP]])
+          AggregateRel(group=[{}], EXPR$0=[MIN($0)])
+            ProjectRel(DEPTNO=[$0])
+              TableAccessRel(table=[[CATALOG, SALES, DEPT]])
+    AggregateRel(group=[{}], EXPR$0=[MIN($0)])
+      ProjectRel(DEPTNO=[$0])
+        TableAccessRel(table=[[CATALOG, SALES, DEPT]])
+]]>
+        </Resource>
+    </TestCase>    
 </Root>
