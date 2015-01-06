@@ -1303,11 +1303,12 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   public RelDataType getValidatedNodeType(SqlNode node) {
     RelDataType type = getValidatedNodeTypeIfKnown(node);
-    if (type == null) {
-      throw Util.needToImplement(node);
-    } else {
-      return type;
-    }
+    return type;
+//    if (type == null) {
+//      throw Util.needToImplement(node);
+//    } else {
+//      return type;
+//    }
   }
 
   public RelDataType getValidatedNodeTypeIfKnown(SqlNode node) {
