@@ -941,6 +941,40 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   /**
+   * Test group-by CASE expression involving a non-query IN
+   */
+  @Test public void testGroupByCaseSubquery() {
+    check("SELECT CASE WHEN emp.empno IN (3) THEN 0 ELSE 1 END\n"
+        + "FROM emp\n"
+        + "GROUP BY (CASE WHEN emp.empno IN (3) THEN 0 ELSE 1 END)",
+        "${plan}");
+  }
+
+  /**
+   * Test aggregate function on a CASE expression involving a non-query IN
+   */
+  @Test public void testAggCaseSubquery() {
+    check("SELECT SUM(CASE WHEN empno IN (3) THEN 0 ELSE 1 END) FROM emp",
+          "${plan}");
+  }
+
+  @Test public void testAggScalarSubquery() {
+    check("SELECT SUM(SELECT min(deptno) FROM dept) FROM emp",
+          "${plan}");
+  }
+
+  /** Test aggregate function on a CASE expression involving IN with a
+   * sub-query */
+  @Ignore("[CALCITE-551] Sub-query inside aggregate function")
+  @Test public void testAggCaseInSubquery() {
+    check("SELECT SUM(\n"
+        + "  CASE WHEN deptno IN (SELECT deptno FROM dept) THEN 1 ELSE 0 END)\n"
+        + "FROM emp",
+        "${plan}");
+  }
+
+
+  /**
    * Visitor that checks that every {@link RelNode} in a tree is valid.
    *
    * @see RelNode#isValid(boolean)
