@@ -18,6 +18,7 @@ package org.eigenbase.rel;
 
 import java.util.*;
 
+import com.google.common.collect.Lists;
 import org.eigenbase.rel.metadata.*;
 import org.eigenbase.relopt.*;
 import org.eigenbase.reltype.*;
@@ -185,7 +186,7 @@ public abstract class AggregateRelBase extends SingleRel {
       final List<AggregateCall> aggCalls) {
     final IntList groupList = BitSets.toList(groupSet);
     assert groupList.size() == groupSet.cardinality();
-    return typeFactory.createStructType(
+    RelDataType rowType = typeFactory.createStructType(
         CompositeList.of(
             // fields derived from grouping columns
             new AbstractList<RelDataTypeField>() {
@@ -215,7 +216,21 @@ public abstract class AggregateRelBase extends SingleRel {
                 }
                 return new RelDataTypeFieldImpl(name, index, aggCall.type);
               }
-            }));
+            }
+        ));
+
+    // ensure rowtype of aggregate has unique fields
+    List<String> fieldNames =
+        SqlValidatorUtil.uniquify(rowType.getFieldNames(),
+            SqlValidatorUtil.F_SUGGESTER);
+    List<RelDataType> fieldTypes = Lists.newArrayList();
+    for (RelDataTypeField f : rowType.getFieldList()) {
+      fieldTypes.add(f.getType());
+    }
+    rowType = typeFactory.createStructType(
+        fieldTypes, fieldNames);
+    return rowType;
+
   }
 
   /**
