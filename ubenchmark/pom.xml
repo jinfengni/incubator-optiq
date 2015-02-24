@@ -20,7 +20,7 @@ limitations under the License.
   <parent>
     <groupId>org.apache.optiq</groupId>
     <artifactId>optiq</artifactId>
-    <version>0.9-drill-r16</version>
+    <version>0.9-drill-test-r2</version>
   </parent>
 
   <properties>
