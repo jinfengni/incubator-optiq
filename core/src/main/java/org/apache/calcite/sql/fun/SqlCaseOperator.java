@@ -33,6 +33,7 @@ import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
@@ -222,6 +223,21 @@ public class SqlCaseOperator extends SqlOperator {
     return inferTypeFromValidator((SqlCallBinding) opBinding);
   }
 
+  private RelDataType leastRestrictiveHelper(
+      RelDataTypeFactory typeFactory, List<RelDataType> types) {
+    for (RelDataType type : types) {
+      SqlTypeName typeName = type.getSqlTypeName();
+      if (typeName == null) {
+        continue;
+      }
+
+      if (typeName == SqlTypeName.ANY) {
+        return type;
+      }
+    }
+    return typeFactory.leastRestrictive(types);
+  }
+
   private RelDataType inferTypeFromValidator(
       SqlCallBinding callBinding) {
     SqlCase caseCall = (SqlCase) callBinding.getCall();
@@ -244,9 +260,8 @@ public class SqlCaseOperator extends SqlOperator {
       nullList.add(elseOp);
     }
 
-    RelDataType ret =
-        callBinding.getTypeFactory().leastRestrictive(
-            argTypes);
+    RelDataType ret = leastRestrictiveHelper(
+        callBinding.getTypeFactory(), argTypes);
     if (null == ret) {
       throw callBinding.newValidationError(RESOURCE.illegalMixingOfTypes());
     }
