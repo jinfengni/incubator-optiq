@@ -16,7 +16,6 @@
  */
 package org.apache.calcite.materialize;
 
-import org.apache.calcite.jdbc.CalciteRootSchema;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.rel.type.RelDataType;
 
@@ -50,7 +49,7 @@ class MaterializationActor {
    * same results as executing the query. */
   static class Materialization {
     final MaterializationKey key;
-    final CalciteRootSchema rootSchema;
+    final CalciteSchema rootSchema;
     CalciteSchema.TableEntry materializedTable;
     final String sql;
     final RelDataType rowType;
@@ -67,7 +66,7 @@ class MaterializationActor {
      * @param rowType Row type
      */
     Materialization(MaterializationKey key,
-        CalciteRootSchema rootSchema,
+        CalciteSchema rootSchema,
         CalciteSchema.TableEntry materializedTable,
         String sql,
         RelDataType rowType) {

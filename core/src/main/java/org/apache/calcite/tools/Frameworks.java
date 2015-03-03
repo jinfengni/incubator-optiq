@@ -17,6 +17,7 @@
 package org.apache.calcite.tools;
 
 import org.apache.calcite.config.CalciteConnectionProperty;
+import org.apache.calcite.jdbc.CachingCalciteSchema;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.plan.Context;
 import org.apache.calcite.plan.RelOptCluster;
@@ -159,7 +160,7 @@ public class Frameworks {
    *    definitions of tables, columns etc.
    */
   public static SchemaPlus createRootSchema(boolean addMetadataSchema) {
-    return CalciteSchema.createRootSchema(addMetadataSchema).plus();
+    return CachingCalciteSchema.createRootSchema(addMetadataSchema).plus();
   }
 
   public static ConfigBuilder newConfigBuilder() {

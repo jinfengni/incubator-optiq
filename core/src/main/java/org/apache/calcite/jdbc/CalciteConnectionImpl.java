@@ -86,7 +86,7 @@ abstract class CalciteConnectionImpl
     implements CalciteConnection, QueryProvider {
   public final JavaTypeFactory typeFactory;
 
-  final CalciteRootSchema rootSchema;
+  final CalciteSchema rootSchema;
   final Function0<CalcitePrepare> prepareFactory;
   final CalciteServer server = new CalciteServerImpl();
 
@@ -106,7 +106,7 @@ abstract class CalciteConnectionImpl
    * @param typeFactory Type factory, or null
    */
   protected CalciteConnectionImpl(Driver driver, AvaticaFactory factory,
-      String url, Properties info, CalciteRootSchema rootSchema,
+      String url, Properties info, CalciteSchema rootSchema,
       JavaTypeFactory typeFactory) {
     super(driver, factory, url, info);
     CalciteConnectionConfig cfg = new CalciteConnectionConfigImpl(info);
@@ -118,8 +118,8 @@ abstract class CalciteConnectionImpl
           cfg.typeSystem(RelDataTypeSystem.class, RelDataTypeSystem.DEFAULT);
       this.typeFactory = new JavaTypeFactoryImpl(typeSystem);
     }
-    this.rootSchema =
-        rootSchema != null ? rootSchema : CalciteSchema.createRootSchema(true);
+    this.rootSchema = rootSchema != null
+        ? rootSchema : CachingCalciteSchema.createRootSchema(true);
 
     this.properties.put(InternalProperty.CASE_SENSITIVE, cfg.caseSensitive());
     this.properties.put(InternalProperty.UNQUOTED_CASING, cfg.unquotedCasing());
@@ -422,7 +422,7 @@ abstract class CalciteConnectionImpl
       return connection.typeFactory;
     }
 
-    public CalciteRootSchema getRootSchema() {
+    public CalciteSchema getRootSchema() {
       return connection.rootSchema;
     }
 
