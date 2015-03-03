@@ -23,6 +23,7 @@ import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.jdbc.CalcitePrepare;
+import org.apache.calcite.jdbc.CalciteRootSchema;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.QueryProvider;
@@ -388,7 +389,7 @@ public final class Schemas {
         return typeFactory;
       }
 
-      public CalciteSchema getRootSchema() {
+      public CalciteRootSchema getRootSchema() {
         return schema.root();
       }
 
@@ -504,7 +505,7 @@ public final class Schemas {
   public static Path path(CalciteSchema rootSchema, Iterable<String> names) {
     final ImmutableList.Builder<Pair<String, Schema>> builder =
         ImmutableList.builder();
-    Schema schema = rootSchema.schema;
+    Schema schema = rootSchema.getSchema();
     final Iterator<String> iterator = names.iterator();
     if (!iterator.hasNext()) {
       return PathImpl.EMPTY;

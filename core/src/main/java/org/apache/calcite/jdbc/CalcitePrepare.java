@@ -107,7 +107,7 @@ public interface CalcitePrepare {
   interface Context {
     JavaTypeFactory getTypeFactory();
 
-    CalciteSchema getRootSchema();
+    CalciteRootSchema getRootSchema();
 
     List<String> getDefaultSchemaPath();
 

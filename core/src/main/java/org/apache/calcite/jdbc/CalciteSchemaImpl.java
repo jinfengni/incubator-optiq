@@ -24,7 +24,6 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.TableMacro;
 import org.apache.calcite.util.Compatible;
-import org.apache.calcite.util.Pair;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -44,9 +43,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * CachingCalciteSchema maintains a set of Navigable maps for each entity type.
+ * CalciteSchemaImpl maintains a set of Navigable maps for each entity type.
  */
-public class CachingCalciteSchema extends CalciteSchema {
+public class CalciteSchemaImpl extends CalciteAbstractSchema {
   /** Comparator that compares all strings differently, but if two strings are
    * equal in case-insensitive match they are right next to each other. In a
    * collection sorted on this comparator, we can find case-insensitive matches
@@ -64,7 +63,7 @@ public class CachingCalciteSchema extends CalciteSchema {
       };
   /** Tables explicitly defined in this schema. Does not include tables in
    *  {@link #schema}. */
-  public final NavigableMap<String, TableEntry> tableMap =
+  private final NavigableMap<String, TableEntry> tableMap =
       new TreeMap<String, TableEntry>(COMPARATOR);
   private final Multimap<String, FunctionEntry> functionMap =
       LinkedListMultimap.create();
@@ -83,14 +82,14 @@ public class CachingCalciteSchema extends CalciteSchema {
 
   private boolean cache = true;
 
-  public CachingCalciteSchema(CalciteSchema parent, final Schema schema,
-                            String name) {
+  public CalciteSchemaImpl(CalciteSchema parent, final Schema schema,
+                           String name) {
     super(parent, schema, name);
     assert (parent == null) == (this instanceof CalciteRootSchema);
     this.implicitSubSchemaCache =
         new AbstractCached<SubSchemaCache>() {
           public SubSchemaCache build() {
-            return new SubSchemaCache(CachingCalciteSchema.this,
+            return new SubSchemaCache(CalciteSchemaImpl.this,
                 Compatible.INSTANCE.navigableSet(
                     ImmutableSortedSet.copyOf(COMPARATOR,
                         schema.getSubSchemaNames())));
@@ -116,6 +115,7 @@ public class CachingCalciteSchema extends CalciteSchema {
   }
 
   /** Defines a table within this schema. */
+  @Override
   public TableEntry add(String tableName, Table table,
                                  ImmutableList<String> sqls) {
     final TableEntryImpl entry =
@@ -124,7 +124,8 @@ public class CachingCalciteSchema extends CalciteSchema {
     return entry;
   }
 
-  protected FunctionEntry add(String name, Function function) {
+  @Override
+  public FunctionEntry add(String name, Function function) {
     final FunctionEntryImpl entry =
         new FunctionEntryImpl(this, name, function);
     functionMap.put(name, entry);
@@ -135,7 +136,8 @@ public class CachingCalciteSchema extends CalciteSchema {
     return entry;
   }
 
-  protected LatticeEntry add(String name, Lattice lattice) {
+  @Override
+  public LatticeEntry add(String name, Lattice lattice) {
     if (latticeMap.containsKey(name)) {
       throw new RuntimeException("Duplicate lattice '" + name + "'");
     }
@@ -144,7 +146,8 @@ public class CachingCalciteSchema extends CalciteSchema {
     return entry;
   }
 
-  protected void setCache(boolean cache) {
+  @Override
+  public void setCache(boolean cache) {
     if (cache == this.cache) {
       return;
     }
@@ -155,22 +158,13 @@ public class CachingCalciteSchema extends CalciteSchema {
     this.cache = cache;
   }
 
-  protected boolean isCacheEnabled() {
+  @Override
+  public boolean isCacheEnabled() {
     return this.cache;
   }
 
-  /** Creates a root schema. When <code>addMetadataSchema</code> argument is
-   * true a "metadata" schema containing definitions of tables, columns etc. is
-   * added to root schema. */
-  public static CalciteSchema createRootSchema(boolean addMetadataSchema) {
-    CachingCalciteRootSchema rootSchema =
-        new CachingCalciteRootSchema(new CalciteConnectionImpl.RootSchema());
-    if (addMetadataSchema) {
-      rootSchema.add("metadata", MetadataSchema.INSTANCE);
-    }
-    return rootSchema;
-  }
 
+  @Override
   public final CalciteSchema getSubSchema(String schemaName,
                                           boolean caseSensitive) {
     if (caseSensitive) {
@@ -205,40 +199,42 @@ public class CachingCalciteSchema extends CalciteSchema {
     }
   }
 
-
   /** Adds a child schema of this schema. */
+  @Override
   public CalciteSchema add(String name, Schema schema) {
     final CalciteSchema calciteSchema =
-        new CachingCalciteSchema(this, schema, name);
+        new CalciteSchemaImpl(this, schema, name);
     subSchemaMap.put(name, calciteSchema);
     return calciteSchema;
   }
 
   /** Returns a table that materializes the given SQL statement. */
-  public final Pair<String, Table> getTableBySql(String sql) {
+  @Override
+  public final TableEntry getTableBySql(String sql) {
     for (TableEntry tableEntry : tableMap.values()) {
       if (tableEntry.sqls.contains(sql)) {
-        return Pair.of(tableEntry.name, tableEntry.getTable());
+        return tableEntry;
       }
     }
     return null;
   }
 
   /** Returns a table with the given name. Does not look for views. */
-  public final Pair<String, Table> getTable(String tableName,
-                                            boolean caseSensitive) {
+  @Override
+  public final TableEntry getTable(String tableName,
+                                   boolean caseSensitive) {
     if (caseSensitive) {
       // Check explicit tables, case-sensitive.
       final TableEntry entry = tableMap.get(tableName);
       if (entry != null) {
-        return Pair.of(tableName, entry.getTable());
+        return entry;
       }
       // Check implicit tables, case-sensitive.
       final long now = System.currentTimeMillis();
       if (implicitTableCache.get(now).contains(tableName)) {
         final Table table = schema.getTable(tableName);
         if (table != null) {
-          return Pair.of(tableName, table);
+          return tableEntry(tableName, table);
         }
       }
       return null;
@@ -247,7 +243,7 @@ public class CachingCalciteSchema extends CalciteSchema {
       //noinspection LoopStatementThatDoesntLoop
       for (Map.Entry<String, TableEntry> entry
           : find(tableMap, tableName).entrySet()) {
-        return Pair.of(entry.getKey(), entry.getValue().getTable());
+        return entry.getValue();
       }
       // Check implicit tables, case-insensitive.
       final long now = System.currentTimeMillis();
@@ -257,7 +253,7 @@ public class CachingCalciteSchema extends CalciteSchema {
       if (tableName2 != null) {
         final Table table = schema.getTable(tableName2);
         if (table != null) {
-          return Pair.of(tableName2, table);
+          return tableEntry(tableName2, table);
         }
       }
       return null;
@@ -268,6 +264,7 @@ public class CachingCalciteSchema extends CalciteSchema {
    * {@link #add(String, org.apache.calcite.schema.Schema)}) and implicit
    * (defined using {@link org.apache.calcite.schema.Schema#getSubSchemaNames()}
    * and {@link Schema#getSubSchema(String)}). */
+  @Override
   public NavigableMap<String, CalciteSchema> getSubSchemaMap() {
     // Build a map of implicit sub-schemas first, then explicit sub-schemas.
     // If there are implicit and explicit with the same name, explicit wins.
@@ -285,12 +282,14 @@ public class CachingCalciteSchema extends CalciteSchema {
   /** Returns a collection of lattices.
    *
    * <p>All are explicit (defined using {@link #add(String, Lattice)}). */
+  @Override
   public NavigableMap<String, LatticeEntry> getLatticeMap() {
     return Compatible.INSTANCE.immutableNavigableMap(latticeMap);
   }
 
   /** Returns the set of all table names. Includes implicit and explicit tables
    * and functions with zero parameters. */
+  @Override
   public NavigableSet<String> getTableNames() {
     final ImmutableSortedSet.Builder<String> builder =
         new ImmutableSortedSet.Builder<String>(COMPARATOR);
@@ -303,6 +302,7 @@ public class CachingCalciteSchema extends CalciteSchema {
 
   /** Returns a collection of all functions, explicit and implicit, with a given
    * name. Never null. */
+  @Override
   public Collection<Function> getFunctions(String name, boolean caseSensitive) {
     final ImmutableList.Builder<Function> builder = ImmutableList.builder();
 
@@ -344,6 +344,7 @@ public class CachingCalciteSchema extends CalciteSchema {
 
   /** Returns the list of function names in this schema, both implicit and
    * explicit, never null. */
+  @Override
   public NavigableSet<String> getFunctionNames() {
     final ImmutableSortedSet.Builder<String> builder =
         new ImmutableSortedSet.Builder<String>(COMPARATOR);
@@ -356,6 +357,7 @@ public class CachingCalciteSchema extends CalciteSchema {
 
   /** Returns tables derived from explicit and implicit functions
    * that take zero parameters. */
+  @Override
   public NavigableMap<String, Table> getTablesBasedOnNullaryFunctions() {
     ImmutableSortedMap.Builder<String, Table> builder =
         new ImmutableSortedMap.Builder<String, Table>(COMPARATOR);
@@ -381,9 +383,9 @@ public class CachingCalciteSchema extends CalciteSchema {
 
   /** Returns a tables derived from explicit and implicit functions
    * that take zero parameters. */
-  public Pair<String, Table> getTableBasedOnNullaryFunction(
-      String tableName,
-      boolean caseSensitive) {
+  @Override
+  public TableEntry getTableBasedOnNullaryFunction(String tableName,
+                                                   boolean caseSensitive) {
     if (caseSensitive) {
       final FunctionEntry functionEntry = nullaryFunctionMap.get(tableName);
       if (functionEntry != null) {
@@ -391,14 +393,14 @@ public class CachingCalciteSchema extends CalciteSchema {
         if (function instanceof TableMacro) {
           assert function.getParameters().isEmpty();
           final Table table = ((TableMacro) function).apply(ImmutableList.of());
-          return Pair.of(tableName, table);
+          return tableEntry(tableName, table);
         }
       }
       for (Function function : schema.getFunctions(tableName)) {
         if (function instanceof TableMacro
             && function.getParameters().isEmpty()) {
           final Table table = ((TableMacro) function).apply(ImmutableList.of());
-          return Pair.of(tableName, table);
+          return tableEntry(tableName, table);
         }
       }
     } else {
@@ -408,7 +410,7 @@ public class CachingCalciteSchema extends CalciteSchema {
         if (function instanceof TableMacro) {
           assert function.getParameters().isEmpty();
           final Table table = ((TableMacro) function).apply(ImmutableList.of());
-          return Pair.of(entry.getKey(), table);
+          return tableEntry(tableName, table);
         }
       }
       final NavigableSet<String> set =
@@ -419,12 +421,29 @@ public class CachingCalciteSchema extends CalciteSchema {
               && function.getParameters().isEmpty()) {
             final Table table =
                 ((TableMacro) function).apply(ImmutableList.of());
-            return Pair.of(s, table);
+            return tableEntry(tableName, table);
           }
         }
       }
     }
     return null;
+  }
+
+  /** Creates a root schema. When <code>addMetadataSchema</code> argument is
+   * true a "metadata" schema containing definitions of tables, columns etc. is
+   * added to root schema. */
+  public static CalciteRootSchema createRootSchema(boolean addMetadataSchema) {
+    CalciteRootSchemaImpl rootSchema =
+        new CalciteRootSchemaImpl(new CalciteConnectionImpl.RootSchema());
+    if (addMetadataSchema) {
+      rootSchema.add("metadata", MetadataSchema.INSTANCE);
+    }
+    return rootSchema;
+  }
+
+  /** Creates a TableEntryImpl with no SQLs. */
+  private TableEntryImpl tableEntry(String name, Table table) {
+    return new TableEntryImpl(this, name, table, ImmutableList.<String>of());
   }
 
   /** Returns a subset of a map whose keys match the given string
@@ -459,14 +478,14 @@ public class CachingCalciteSchema extends CalciteSchema {
     void enable(long now, boolean enabled);
   }
 
-  /** Implementation of {@link CachingCalciteSchema.Cached}
-   * that drives from {@link CachingCalciteSchema#cache}. */
+  /** Implementation of {@link CalciteSchemaImpl.Cached}
+   * that drives from {@link CalciteSchemaImpl#cache}. */
   private abstract class AbstractCached<T> implements Cached<T> {
     T t;
     long checked = Long.MIN_VALUE;
 
     public T get(long now) {
-      if (!CachingCalciteSchema.this.cache) {
+      if (!CalciteSchemaImpl.this.cache) {
         return build();
       }
       if (checked == Long.MIN_VALUE
@@ -501,12 +520,12 @@ public class CachingCalciteSchema extends CalciteSchema {
             @SuppressWarnings("NullableProblems")
             @Override public CalciteSchema load(String schemaName) {
               final Schema subSchema =
-                  calciteSchema.schema.getSubSchema(schemaName);
+                  calciteSchema.getSchema().getSubSchema(schemaName);
               if (subSchema == null) {
                 throw new RuntimeException("sub-schema " + schemaName
                     + " not found");
               }
-              return new CachingCalciteSchema(calciteSchema,
+              return new CalciteSchemaImpl(calciteSchema,
                   subSchema, schemaName);
             }
           });

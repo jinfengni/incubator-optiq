@@ -20,7 +20,7 @@ package org.apache.calcite.jdbc;
 /**
  * Interface that marks the root schema.
  */
-public interface CalciteRootSchema {
+public interface CalciteRootSchema extends CalciteSchema {
 }
 
 // End CalciteRootSchema.java

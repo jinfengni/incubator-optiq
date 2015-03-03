@@ -17,8 +17,8 @@
 package org.apache.calcite.tools;
 
 import org.apache.calcite.config.CalciteConnectionProperty;
-import org.apache.calcite.jdbc.CachingCalciteSchema;
 import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.jdbc.CalciteSchemaImpl;
 import org.apache.calcite.plan.Context;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCostFactory;
@@ -109,7 +109,7 @@ public class Frameworks {
           public R apply(RelOptCluster cluster, RelOptSchema relOptSchema,
               SchemaPlus rootSchema, CalciteServerStatement statement) {
             final CalciteSchema schema =
-                CalciteSchema.from(
+                CalciteSchemaImpl.from(
                     Util.first(config.getDefaultSchema(), rootSchema));
             return action.apply(cluster, relOptSchema, schema.root().plus());
           }
@@ -160,7 +160,7 @@ public class Frameworks {
    *    definitions of tables, columns etc.
    */
   public static SchemaPlus createRootSchema(boolean addMetadataSchema) {
-    return CachingCalciteSchema.createRootSchema(addMetadataSchema).plus();
+    return CalciteSchemaImpl.createRootSchema(addMetadataSchema).plus();
   }
 
   public static ConfigBuilder newConfigBuilder() {

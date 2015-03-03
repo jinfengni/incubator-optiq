@@ -17,7 +17,7 @@
 package org.apache.calcite.prepare;
 
 import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.jdbc.CalciteSchemaImpl;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptSchema;
@@ -242,9 +242,9 @@ public class PlannerImpl implements Planner {
   private CalciteCatalogReader createCatalogReader() {
     SchemaPlus rootSchema = rootSchema(defaultSchema);
     return new CalciteCatalogReader(
-        CalciteSchema.from(rootSchema),
+        CalciteSchemaImpl.from(rootSchema),
         parserConfig.caseSensitive(),
-        CalciteSchema.from(defaultSchema).path(null),
+        CalciteSchemaImpl.from(defaultSchema).path(null),
         typeFactory);
   }
 
