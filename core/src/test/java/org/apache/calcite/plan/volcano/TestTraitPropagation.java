@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.calcite.rel.convert.ConverterRule;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -96,7 +97,8 @@ public class TestTraitPropagation {
       PhysProjRule.INSTANCE, //
       PhysTableRule.INSTANCE, //
       PhysSortRule.INSTANCE, //
-      ExpandConversionRule.INSTANCE //
+      ExpandConversionRule.INSTANCE, //
+      PhysProjTraitPropUpRule.INSTANCE
   );
 
   static final RuleSet RULES_HACK = RuleSets.ofList(
@@ -212,41 +214,54 @@ public class TestTraitPropagation {
   }
 
   /** Rule for PhysProj */
-  private static class PhysProjRule extends RelOptRule {
+  private static class PhysProjRule extends ConverterRule {
     static final PhysProjRule INSTANCE = new PhysProjRule(false);
     static final PhysProjRule INSTANCE_HACK = new PhysProjRule(true);
 
     final boolean subsetHack;
 
     private PhysProjRule(boolean subsetHack) {
-      super(RelOptRule.operand(LogicalProject.class,
-          anyChild(RelNode.class)), "PhysProj");
+      super(LogicalProject.class, RelOptUtil.PROJECT_PREDICATE, Convention.NONE,
+          PHYSICAL, "ProjectRule");
       this.subsetHack = subsetHack;
+    }
+
+    public RelNode convert(RelNode rel) {
+      final LogicalProject project = (LogicalProject) rel;
+      return new PhysProj(rel.getCluster(),
+          rel.getTraitSet().replace(PHYSICAL),
+          convert(project.getInput(),
+              project.getInput().getTraitSet()
+                  .replace(PHYSICAL)),
+          project.getProjects(),
+          project.getRowType());
+    }
+
+  }
+
+  /** Rule for PhysProj */
+  private static class PhysProjTraitPropUpRule extends RelOptRule {
+    static final PhysProjTraitPropUpRule INSTANCE = new PhysProjTraitPropUpRule();
+
+    private PhysProjTraitPropUpRule() {
+      super(RelOptRule.operand(PhysProj.class,
+          anyChild(RelNode.class)), "PhysProjTraitPropUp");
     }
 
     public void onMatch(RelOptRuleCall call) {
       RelTraitSet empty = call.getPlanner().emptyTraitSet();
-      LogicalProject rel = (LogicalProject) call.rel(0);
-      RelNode input = convert(rel.getInput(), empty.replace(PHYSICAL));
+      PhysProj rel = (PhysProj) call.rel(0);
+      RelNode input = rel.getInput();
 
-
-      if (subsetHack && input instanceof RelSubset) {
-        RelSubset subset = (RelSubset) input;
-        for (RelNode child : subset.getRels()) {
-          // skip logical nodes
-          if (child.getTraitSet().getTrait(ConventionTraitDef.INSTANCE)
-              == Convention.NONE) {
-            continue;
-          } else {
-            RelTraitSet outcome = child.getTraitSet().replace(PHYSICAL);
-            call.transformTo(new PhysProj(rel.getCluster(), outcome,
-                convert(child, outcome), rel.getChildExps(), rel.getRowType()));
-          }
+      if (input instanceof RelSubset) {
+        RelNode best = ((RelSubset)input).getBest();
+        if (best != null) {
+          input = best;
         }
-      } else {
-        call.transformTo(new PhysProj(rel.getCluster(), input.getTraitSet(),
-            input, rel.getChildExps(), rel.getRowType()));
       }
+
+      call.transformTo(new PhysProj(rel.getCluster(), input.getTraitSet(),
+          input, rel.getProjects(), rel.getRowType()));
 
     }
   }
