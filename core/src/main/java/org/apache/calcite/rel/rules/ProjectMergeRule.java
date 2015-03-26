@@ -66,7 +66,7 @@ public class ProjectMergeRule extends RelOptRule {
     super(
         operand(Project.class,
             operand(Project.class, any())),
-        "ProjectMergeRule" + (force ? ": force mode" : ""));
+        "ProjectMergeRule" + (force ? ":force_mode" : ""));
     this.force = force;
     projectFactory = pFactory;
   }
