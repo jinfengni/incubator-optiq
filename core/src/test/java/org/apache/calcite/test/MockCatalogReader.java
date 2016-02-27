@@ -131,6 +131,11 @@ public class MockCatalogReader implements Prepare.CatalogReader {
     }
   }
 
+  @Override
+  public boolean isCaseSensitive() {
+    return caseSensitive;
+  }
+
   /**
    * Initializes this catalog reader.
    */

@@ -1481,7 +1481,8 @@ public class SubstitutionVisitor {
               fieldNameList == null
                   ? null
                   : SqlValidatorUtil.uniquify(fieldNameList,
-                      SqlValidatorUtil.F_SUGGESTER));
+                      SqlValidatorUtil.F_SUGGESTER,
+                      child.cluster.getTypeFactory().getTypeSystem().isSchemaCaseSensitive()));
       return of(rowType, child, exprList);
     }
 
