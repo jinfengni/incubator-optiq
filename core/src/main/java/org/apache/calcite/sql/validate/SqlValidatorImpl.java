@@ -19,6 +19,7 @@ package org.apache.calcite.sql.validate;
 import org.apache.calcite.config.NullCollation;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -327,6 +328,11 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       SqlNodeList selectList,
       SqlSelect select,
       boolean includeSystemVars) {
+
+    if (select.isExpanded()) {
+      return selectList;
+    }
+
     final List<SqlNode> list = new ArrayList<>();
     final List<Map.Entry<String, RelDataType>> types = new ArrayList<>();
     for (int i = 0; i < selectList.size(); i++) {
@@ -453,30 +459,46 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     if (!identifier.isStar()) {
       return false;
     }
-    final SqlParserPos starPosition = identifier.getParserPosition();
+    final SqlParserPos startPosition = identifier.getParserPosition();
     switch (identifier.names.size()) {
     case 1:
       for (Pair<String, SqlValidatorNamespace> p : scope.children) {
-        final SqlNode from = p.right.getNode();
-        final SqlValidatorNamespace fromNs = getNamespace(from, scope);
-        assert fromNs != null;
-        final RelDataType rowType = fromNs.getRowType();
-        for (RelDataTypeField field : rowType.getFieldList()) {
-          String columnName = field.getName();
 
-          // TODO: do real implicit collation here
-          final SqlNode exp =
-              new SqlIdentifier(
-                  ImmutableList.of(p.left, columnName),
-                  starPosition);
+        if (p.right.getRowType() instanceof DynamicRecordType) {
+          // don't expand if DynamicRecordType.
+          final SqlNode exp = new SqlIdentifier(
+                  ImmutableList.of(p.left, ""),
+                  startPosition);
           addToSelectList(
-              selectItems,
-              aliases,
-              types,
-              exp,
-              scope,
-              includeSystemVars);
+               selectItems,
+               aliases,
+               types,
+               exp,
+               scope,
+               includeSystemVars);
+        } else {
+          final SqlNode from = p.right.getNode();
+          final SqlValidatorNamespace fromNs = getNamespace(from, scope);
+          assert fromNs != null;
+          final RelDataType rowType = fromNs.getRowType();
+          for (RelDataTypeField field : rowType.getFieldList()) {
+            String columnName = field.getName();
+
+            // TODO: do real implicit collation here
+            final SqlNode exp =
+                new SqlIdentifier(
+                    ImmutableList.of(p.left, columnName),
+                    startPosition);
+            addToSelectList(
+                selectItems,
+                aliases,
+                types,
+                exp,
+                scope,
+                includeSystemVars);
+          }
         }
+
       }
       return true;
     default:
@@ -502,18 +524,31 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       }
       assert fromNs != null;
       final RelDataType rowType = fromNs.getRowType();
-      for (RelDataTypeField field : rowType.getFieldList()) {
-        String columnName = field.getName();
 
-        // TODO: do real implicit collation here
+      if (rowType instanceof DynamicRecordType) {
+        // Do not expand, if it's DynamicRecordType.
         addToSelectList(
             selectItems,
             aliases,
             types,
-            prefixId.plus(columnName, starPosition),
+            prefixId.plus("", startPosition),
             scope,
             includeSystemVars);
+      } else {
+        for (RelDataTypeField field : rowType.getFieldList()) {
+          String columnName = field.getName();
+
+          // TODO: do real implicit collation here
+          addToSelectList(
+              selectItems,
+              aliases,
+              types,
+              prefixId.plus(columnName, startPosition),
+              scope,
+              includeSystemVars);
+        }
       }
+
       return true;
     }
   }
@@ -3455,6 +3490,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             selectItems.getParserPosition());
     if (shouldExpandIdentifiers()) {
       select.setSelectList(newSelectList);
+      select.setExpanded(true);
     }
     getRawSelectScope(select).setExpandedSelectList(expandedSelectItems);
 

@@ -107,6 +107,15 @@ public abstract class RelDataTypeImpl
             fieldName, -1, lastField.getType());
       }
     }
+
+    // an unresolved * field will match any field name.
+    for (RelDataTypeField field : fieldList) {
+      if (field.isUnresolvedStar()) {
+        // the requested field could be in the unresolved star
+        return field;
+      }
+    }
+
     return null;
   }
 

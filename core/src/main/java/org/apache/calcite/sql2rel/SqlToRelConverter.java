@@ -3763,6 +3763,22 @@ public class SqlToRelConverter {
           newLeftInputExpr.add(rexBuilder.makeInputRef(root, i));
         }
 
+        // Schema-less table behavior: We have to keep the original field name from left
+        // otherwise, if there "*" from left, the new Project
+        // will rename "*" to "f0" or something and completely ignore
+        // the semantics of "*" in a schema-less table.
+        List<String> newLeftFieldNames = Lists.newArrayList();
+        boolean containsStar = false;
+
+        for (int i = 0; i < origLeftInputCount; i++) {
+          newLeftInputExpr.add(rexBuilder.makeInputRef(root, i));
+          RelDataTypeField field = root.getRowType().getFieldList().get(i);
+          if (field.isUnresolvedStar()) {
+            containsStar = true;
+          }
+          newLeftFieldNames.add(field.getName());
+        }
+
         final List<Integer> leftJoinKeys = Lists.newArrayList();
         for (RexNode leftKey : leftKeys) {
           int index = newLeftInputExpr.indexOf(leftKey);
@@ -3771,13 +3787,17 @@ public class SqlToRelConverter {
             newLeftInputExpr.add(leftKey);
           }
           leftJoinKeys.add(index);
+
+          // Use "f" for join key field name in Project.
+          String name = "f" + (newLeftFieldNames.size() - 1);
+          newLeftFieldNames.add(name);
         }
 
         RelNode newLeftInput =
             RelOptUtil.createProject(
                 root,
                 newLeftInputExpr,
-                null,
+                containsStar ? newLeftFieldNames : null,
                 true);
 
         // maintain the group by mapping in the new LogicalProject

@@ -149,12 +149,14 @@ public abstract class DelegatingScope implements SqlValidatorScope {
 
     String columnName;
     switch (identifier.names.size()) {
-    case 1:
+    case 1: {
       columnName = identifier.names.get(0);
       final Pair<String, SqlValidatorNamespace> pair =
           findQualifyingTableName(columnName, identifier);
       final String tableName = pair.left;
       final SqlValidatorNamespace namespace = pair.right;
+
+      checkAmbiguousUnresolvedStar(namespace.getRowType(), identifier, columnName);
 
       // todo: do implicit collation here
       final SqlParserPos pos = identifier.getParserPosition();
@@ -166,8 +168,9 @@ public abstract class DelegatingScope implements SqlValidatorScope {
               ImmutableList.of(SqlParserPos.ZERO, pos));
       validator.setOriginal(expanded, identifier);
       return SqlQualified.create(this, 1, namespace, expanded);
+    }
 
-    default:
+    default: {
       SqlValidatorNamespace fromNs = null;
       final int size = identifier.names.size();
       int i = size - 1;
@@ -194,6 +197,9 @@ public abstract class DelegatingScope implements SqlValidatorScope {
               RESOURCE.columnNotFoundInTable(columnName,
                   identifier.getComponent(0, j).toString()));
         }
+
+        checkAmbiguousUnresolvedStar(fromRowType, identifier, columnName);
+
         // normalize case to match definition, in a copy of the identifier
         identifier = identifier.setName(j, field.getName());
         fromRowType = field.getType();
@@ -209,6 +215,7 @@ public abstract class DelegatingScope implements SqlValidatorScope {
         identifier = identifier.getComponent(i - 1, identifier.names.size());
       }
       return SqlQualified.create(this, i, fromNs, identifier);
+    }
     }
   }
 
@@ -227,6 +234,29 @@ public abstract class DelegatingScope implements SqlValidatorScope {
 
   public SqlNodeList getOrderList() {
     return parent.getOrderList();
+  }
+
+  private void checkAmbiguousUnresolvedStar(RelDataType fromRowType,
+      SqlIdentifier identifier, String columnName) {
+    final RelDataTypeField field = validator.catalogReader.field(fromRowType, columnName);
+
+    if (field != null && field.isUnresolvedStar() && !columnName.equals("")) {
+      // Make sure fromRowType only contains one star column.
+      // Having more than one star columns implies ambiguous column.
+
+      int count = 0;
+      for (RelDataTypeField possibleStar : fromRowType.getFieldList()) {
+        if (possibleStar.isUnresolvedStar()) {
+          count++;
+        }
+      }
+
+      if (count > 1) {
+        throw validator.newValidationError(identifier,
+            RESOURCE.columnAmbiguous(columnName));
+      }
+    }
+
   }
 
   /**

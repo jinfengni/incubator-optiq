@@ -50,6 +50,8 @@ public interface RelDataTypeField extends Map.Entry<String, RelDataType> {
    * @return field type
    */
   RelDataType getType();
+
+  boolean isUnresolvedStar();
 }
 
 // End RelDataTypeField.java

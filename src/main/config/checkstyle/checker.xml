@@ -275,5 +275,5 @@ limitations under the License.
     <property name="influenceFormat" value="$1"/>
   </module>
 
-  <module name="net.hydromatic.toolbox.checkstyle.HydromaticFileSetCheck"/>
+  <!-- <module name="net.hydromatic.toolbox.checkstyle.HydromaticFileSetCheck"/> -->
 </module>

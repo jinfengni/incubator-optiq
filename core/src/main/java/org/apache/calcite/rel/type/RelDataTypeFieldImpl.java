@@ -99,6 +99,12 @@ public class RelDataTypeFieldImpl implements RelDataTypeField, Serializable {
   public String toString() {
     return "#" + index + ": " + name + " " + type;
   }
+
+  @Override
+  public boolean isUnresolvedStar() {
+    return name.equals("");
+  }
+
 }
 
 // End RelDataTypeFieldImpl.java

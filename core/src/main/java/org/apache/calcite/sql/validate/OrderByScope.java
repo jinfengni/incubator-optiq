@@ -73,8 +73,13 @@ public class OrderByScope extends DelegatingScope {
       final SqlValidatorNamespace selectNs =
           validator.getNamespace(select);
       final RelDataType rowType = selectNs.getRowType();
-      if (validator.catalogReader.field(rowType, name) != null) {
-        return SqlQualified.create(this, 1, selectNs, identifier);
+
+      final RelDataTypeField field = validator.catalogReader.field(rowType, name);
+      if (field != null) {
+        if (!field.isUnresolvedStar()) {
+          // if we have an unresolved *, we should resolve an identifier to this unknown name.
+          return SqlQualified.create(this, 1, selectNs, identifier);
+        }
       }
     }
     return super.fullyQualify(identifier);

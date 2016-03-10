@@ -24,6 +24,7 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -650,6 +651,13 @@ public class SqlValidatorUtil {
     }
 
     public SqlNode visit(SqlIdentifier id) {
+      // First check for builtin functions which don't have parentheses,
+      // like "LOCALTIME".
+      final SqlCall call = SqlUtil.makeCall(getScope().getValidator().getOperatorTable(), id);
+      if (call != null) {
+        return call;
+      }
+
       return getScope().fullyQualify(id).identifier;
     }
 
@@ -665,6 +673,41 @@ public class SqlValidatorUtil {
       return (SqlNode) intervalQualifier.clone();
     }
   }
+
+  /**
+   * Walks over an expression, copying every node, fully-qualifying every
+   * identifier and expand star if necessary
+   */
+  public static class ExpansionAndDeepCopier extends DeepCopier {
+    ExpansionAndDeepCopier(SqlValidatorScope scope) {
+      super(scope);
+    }
+
+    /** Copies a list of nodes. */
+    public static SqlNodeList copy(SqlValidatorScope scope, SqlNodeList list) {
+      return (SqlNodeList) list.accept(new ExpansionAndDeepCopier(scope));
+    }
+
+    @Override
+    public SqlNode visit(SqlIdentifier id) {
+      SqlIdentifier fqId = getScope().fullyQualify(id).identifier;
+      if (Util.last(fqId.names).equals("")
+          && !Util.last(id.names).equals("")) {
+        SqlNode[] inputs = new SqlNode[2];
+        inputs[0] = fqId;
+        inputs[1] = SqlLiteral.createCharString(
+            Util.last(id.names),
+                id.getParserPosition());
+        return new SqlBasicCall(
+            SqlStdOperatorTable.ITEM,
+                inputs,
+                    id.getParserPosition());
+      } else {
+        return fqId;
+      }
+    }
+  }
+
 
   /** Suggests candidates for unique names, given the number of attempts so far
    * and the number of expressions in the project list. */
