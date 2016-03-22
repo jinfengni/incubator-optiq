@@ -3273,4 +3273,55 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testSelectFromDynamicTable">
+        <Resource name="sql">
+            <![CDATA[select n_nationkey, n_name from SALES.NATION]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(N_NATIONKEY=[$0], N_NAME=[$1])
+  LogicalTableScan(table=[[CATALOG, SALES, NATION]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testSelectStarFromDynamicTable">
+        <Resource name="sql">
+            <![CDATA[select * from SALES.NATION]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(**=[$0])
+  LogicalTableScan(table=[[CATALOG, SALES, NATION]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testReferDynamicStarInSelectOB">
+        <Resource name="sql">
+            <![CDATA[select n_nationkey, n_name from (select * from SALES.NATION) order by n_regionkey]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(N_NATIONKEY=[$0], N_NAME=[$1])
+  LogicalSort(sort0=[$2], dir0=[ASC])
+    LogicalProject(N_NATIONKEY=[ITEM($0, 'N_NATIONKEY')], N_NAME=[ITEM($0, 'N_NAME')], EXPR$2=[ITEM($0, 'N_REGIONKEY')])
+      LogicalProject(**=[$0])
+        LogicalTableScan(table=[[CATALOG, SALES, NATION]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testDynamicStarInTableJoin">
+        <Resource name="sql">
+            <![CDATA[select * from (select * from SALES.NATION) , (SELECT * from SALES.CUSTOMER) ]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(**=[$0], **0=[$1])
+  LogicalJoin(condition=[true], joinType=[inner])
+    LogicalProject(**=[$0])
+      LogicalTableScan(table=[[CATALOG, SALES, NATION]])
+    LogicalProject(**=[$0])
+      LogicalTableScan(table=[[CATALOG, SALES, CUSTOMER]])
+]]>
+        </Resource>
+    </TestCase>
 </Root>

@@ -101,6 +101,8 @@ public class RelWriterImpl implements RelWriter {
           .append(mq.getRowCount(rel))
           .append(", cumulative cost = ")
           .append(mq.getCumulativeCost(rel));
+      s.append(": rowType ")
+          .append(rel.getRowType());
     }
     switch (detailLevel) {
     case NON_COST_ATTRIBUTES:

@@ -32,11 +32,14 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.type.DynamicRecordTypeImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.rel.type.RelDataTypeImpl;
+import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -571,6 +574,10 @@ public class MockCatalogReader implements Prepare.CatalogReader {
     public String getCatalogName() {
       return DEFAULT_CATALOG;
     }
+
+    public String getName() {
+      return name;
+    }
   }
 
   /**
@@ -581,9 +588,9 @@ public class MockCatalogReader implements Prepare.CatalogReader {
     protected final MockCatalogReader catalogReader;
     private final boolean stream;
     private final double rowCount;
-    private final List<Map.Entry<String, RelDataType>> columnList =
+    protected final List<Map.Entry<String, RelDataType>> columnList =
         Lists.newArrayList();
-    private RelDataType rowType;
+    protected RelDataType rowType;
     private List<RelCollation> collationList;
     protected final List<String> names;
     private final Set<String> monotonicColumnSet = Sets.newHashSet();
@@ -713,6 +720,32 @@ public class MockCatalogReader implements Prepare.CatalogReader {
       return table;
     }
   }
+
+  public static class MockDynamicTable extends MockTable {
+    public MockDynamicTable(MockCatalogReader catalogReader, String catalogName,
+        String schemaName, String name, boolean stream, double rowCount) {
+      super(catalogReader, catalogName, schemaName, name, stream, rowCount);
+    }
+
+    @Override
+    public void onRegister(RelDataTypeFactory typeFactory) {
+      rowType =  new DynamicRecordTypeImpl(typeFactory);
+    }
+
+    /**
+     * When convert a Table with Dynamic Record Type to Rel, we should re-create
+     * the rowType such that it's immutable.
+     * @param context
+     * @return
+     */
+    @Override
+    public RelNode toRel(ToRelContext context) {
+      rowType = new RelRecordType(rowType.getFieldList());
+      return super.toRel(context);
+    }
+  }
+
+
 }
 
 // End MockCatalogReader.java

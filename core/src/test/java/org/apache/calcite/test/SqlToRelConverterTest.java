@@ -16,10 +16,17 @@
  */
 package org.apache.calcite.test;
 
+import com.google.common.base.Function;
+import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.externalize.RelXmlWriter;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlExplainLevel;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.TestUtil;
@@ -1722,6 +1729,83 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
        + "and not exists (select * from emp e2 where e1.empno = e2.empno)",
        "${plan}");
   }
+
+  /**
+   * Following test cases are for Dynamic Table / Dynamic Star support
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-1150">[CALCITE-1150]
+   * @throws Exception
+   */
+  @Test
+  public void testSelectFromDynamicTable() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select n_nationkey, n_name from SALES.NATION";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void testSelectStarFromDynamicTable() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select * from SALES.NATION";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void testReferDynamicStarInSelectOB() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select n_nationkey, n_name from (select * from SALES.NATION) \n"
+        + " order by n_regionkey";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void testDynamicStarInTableJoin() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select * from (select * from SALES.NATION) , (SELECT * from SALES.CUSTOMER)";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void test() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select n_nationkey, n_name from (select * from SALES.NATION) \n"
+        + " order by n_regionkey";
+    runTester(myTester, sql);
+  }
+
+  private Tester getTesterWithDynamicTable() {
+    return tester.withCatalogReaderFactory (
+        new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
+          public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
+            return new MockCatalogReader(typeFactory, true) {
+              @Override public MockCatalogReader init() {
+                // CREATE SCHEMA "SALES;
+                // CREATE TABLE "NATION"
+                // CREATE TABLE "CUSTOMER"
+
+                MockSchema schema = new MockSchema("SALES");
+                registerSchema(schema);
+
+                MockTable nationTable = new MockDynamicTable(this, schema.getCatalogName(),
+                    schema.getName(), "NATION", false, 100);
+                registerTable(nationTable);
+
+                MockTable customerTable = new MockDynamicTable(this, schema.getCatalogName(),
+                    schema.getName(), "CUSTOMER", false, 100);
+                registerTable(customerTable);
+
+                return this;
+              }
+            }.init();
+          }
+        });
+  }
+
+  private void runTester(Tester tester, String sql) {
+    RelRoot root;
+    root = tester.convertSqlToRel(sql);
+    System.out.println("relRoot = " + RelOptUtil.dumpPlan("Debug plan", root.project(), false, SqlExplainLevel.ALL_ATTRIBUTES));
+  }
+
 
   /**
    * Visitor that checks that every {@link RelNode} in a tree is valid.
