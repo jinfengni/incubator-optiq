@@ -16,6 +16,7 @@
  */
 package org.apache.calcite.sql.validate;
 
+import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
@@ -156,13 +157,16 @@ public abstract class DelegatingScope implements SqlValidatorScope {
       final String tableName = pair.left;
       final SqlValidatorNamespace namespace = pair.right;
 
-      checkAmbiguousUnresolvedStar(namespace.getRowType(), identifier, columnName);
+      final RelDataTypeField field =
+          validator.catalogReader.field(namespace.getRowType(), columnName);
+
+      checkAmbiguousUnresolvedStar(namespace.getRowType(), field, identifier, columnName);
 
       // todo: do implicit collation here
       final SqlParserPos pos = identifier.getParserPosition();
       SqlIdentifier expanded =
           new SqlIdentifier(
-              ImmutableList.of(tableName, columnName),
+              ImmutableList.of(tableName, field.getName()),  // use resolved field name
               null,
               pos,
               ImmutableList.of(SqlParserPos.ZERO, pos));
@@ -198,7 +202,7 @@ public abstract class DelegatingScope implements SqlValidatorScope {
                   identifier.getComponent(0, j).toString()));
         }
 
-        checkAmbiguousUnresolvedStar(fromRowType, identifier, columnName);
+        checkAmbiguousUnresolvedStar(fromRowType, field, identifier, columnName);
 
         // normalize case to match definition, in a copy of the identifier
         identifier = identifier.setName(j, field.getName());
@@ -236,11 +240,11 @@ public abstract class DelegatingScope implements SqlValidatorScope {
     return parent.getOrderList();
   }
 
-  private void checkAmbiguousUnresolvedStar(RelDataType fromRowType,
+  private void checkAmbiguousUnresolvedStar(RelDataType fromRowType, RelDataTypeField field,
       SqlIdentifier identifier, String columnName) {
-    final RelDataTypeField field = validator.catalogReader.field(fromRowType, columnName);
+//    final RelDataTypeField field = validator.catalogReader.field(fromRowType, columnName);
 
-    if (field != null && field.isUnresolvedStar() && !columnName.equals("")) {
+    if (field != null && field.isUnresolvedStar() && !columnName.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
       // Make sure fromRowType only contains one star column.
       // Having more than one star columns implies ambiguous column.
 

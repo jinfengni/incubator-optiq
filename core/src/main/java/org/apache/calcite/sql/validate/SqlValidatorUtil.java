@@ -21,6 +21,7 @@ import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptSchemaWithSampling;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -691,8 +692,8 @@ public class SqlValidatorUtil {
     @Override
     public SqlNode visit(SqlIdentifier id) {
       SqlIdentifier fqId = getScope().fullyQualify(id).identifier;
-      if (Util.last(fqId.names).equals("")
-          && !Util.last(id.names).equals("")) {
+      if (Util.last(fqId.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)
+          && !Util.last(id.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
         SqlNode[] inputs = new SqlNode[2];
         inputs[0] = fqId;
         inputs[1] = SqlLiteral.createCharString(

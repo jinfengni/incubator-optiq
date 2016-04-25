@@ -102,7 +102,7 @@ public class RelDataTypeFieldImpl implements RelDataTypeField, Serializable {
 
   @Override
   public boolean isUnresolvedStar() {
-    return name.equals("");
+    return name.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX);
   }
 
 }

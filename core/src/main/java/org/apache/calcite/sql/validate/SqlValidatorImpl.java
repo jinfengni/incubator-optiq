@@ -467,7 +467,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         if (p.right.getRowType() instanceof DynamicRecordType) {
           // don't expand if DynamicRecordType.
           final SqlNode exp = new SqlIdentifier(
-                  ImmutableList.of(p.left, ""),
+                  ImmutableList.of(p.left, DynamicRecordType.DYNAMIC_STAR_PREFIX),
                   startPosition);
           addToSelectList(
                selectItems,
@@ -531,7 +531,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             selectItems,
             aliases,
             types,
-            prefixId.plus("", startPosition),
+            prefixId.plus(DynamicRecordType.DYNAMIC_STAR_PREFIX, startPosition),
             scope,
             includeSystemVars);
       } else {
@@ -3291,7 +3291,19 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     final SqlValidatorScope orderScope = getOrderScope(select);
 
     Util.permAssert(orderScope != null, "orderScope != null");
+
+    List<SqlNode> expandList = Lists.newArrayList();
     for (SqlNode orderItem : orderList) {
+      SqlNode expandedOrderItem = expand(orderItem, orderScope);
+      expandList.add(expandedOrderItem);
+    }
+
+    SqlNodeList expandedOrderList = new SqlNodeList(
+        expandList,
+        orderList.getParserPosition());
+    select.setOrderBy(expandedOrderList);
+
+    for (SqlNode orderItem : expandedOrderList) {
       validateOrderItem(select, orderItem);
     }
   }
@@ -4435,8 +4447,25 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         return call.accept(this);
       }
       final SqlIdentifier fqId = getScope().fullyQualify(id).identifier;
-      validator.setOriginal(fqId, id);
-      return fqId;
+      SqlNode expandedExpr = fqId;
+      // Convert a column ref into ITEM(*, 'col_name').
+      if (Util.last(fqId.names).equals("**")
+        && !Util.last(id.names).equals("**")) {
+          SqlNode[] inputs = new SqlNode[2];
+        inputs[0] = fqId;
+        inputs[1] = SqlLiteral.createCharString(
+          Util.last(id.names),
+          id.getParserPosition());
+          SqlBasicCall item_call = new SqlBasicCall(
+          SqlStdOperatorTable.ITEM,
+          inputs,
+          id.getParserPosition());
+          expandedExpr = item_call;
+        }
+      validator.setOriginal(expandedExpr, id);
+      return expandedExpr;
+//      validator.setOriginal(fqId, id);
+//      return fqId;
     }
 
     @Override protected SqlNode visitScoped(SqlCall call) {

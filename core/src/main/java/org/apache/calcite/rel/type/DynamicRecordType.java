@@ -22,10 +22,9 @@ import java.util.List;
  * Specific type of RelRecordType that corresponds to a dynamic table,
  * where columns are created as they are requested.
  */
-public abstract class DynamicRecordType extends RelRecordType {
+public abstract class DynamicRecordType extends RelDataTypeImpl {
 
-  public DynamicRecordType(List<RelDataTypeField> fields) {
-    super(fields);
-  }
+  /**The prefix string for dynamic star column name*/
+  public static final String DYNAMIC_STAR_PREFIX = "**";
 
 }
