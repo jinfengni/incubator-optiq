@@ -328,11 +328,6 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       SqlNodeList selectList,
       SqlSelect select,
       boolean includeSystemVars) {
-
-    if (select.isExpanded()) {
-      return selectList;
-    }
-
     final List<SqlNode> list = new ArrayList<>();
     final List<Map.Entry<String, RelDataType>> types = new ArrayList<>();
     for (int i = 0; i < selectList.size(); i++) {
@@ -3502,7 +3497,6 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             selectItems.getParserPosition());
     if (shouldExpandIdentifiers()) {
       select.setSelectList(newSelectList);
-      select.setExpanded(true);
     }
     getRawSelectScope(select).setExpandedSelectList(expandedSelectItems);
 

@@ -46,7 +46,6 @@ public class SqlSelect extends SqlCall {
   SqlNodeList orderBy;
   SqlNode offset;
   SqlNode fetch;
-  boolean expanded;
 
   //~ Constructors -----------------------------------------------------------
 
@@ -203,14 +202,6 @@ public class SqlSelect extends SqlCall {
 
   public void setFetch(SqlNode fetch) {
     this.fetch = fetch;
-  }
-
-  public boolean isExpanded() {
-    return expanded;
-  }
-
-  public void setExpanded(final boolean expanded) {
-    this.expanded = expanded;
   }
 
   public void validate(SqlValidator validator, SqlValidatorScope scope) {
