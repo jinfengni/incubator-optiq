@@ -21,6 +21,7 @@ import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.materialize.Lattice;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelCollation;
@@ -29,8 +30,10 @@ import org.apache.calcite.rel.RelDistributionTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.schema.ExtensibleTable;
 import org.apache.calcite.schema.FilterableTable;
 import org.apache.calcite.schema.ModifiableTable;
@@ -122,6 +125,16 @@ public class RelOptTableImpl implements Prepare.PreparingTable {
         getClassExpressionFunction(tableEntry, table);
     return new RelOptTableImpl(schema, rowType, tableEntry.path(),
         table, expressionFunction, rowCount);
+  }
+
+  /**
+   * Create a copy of this RelOptTable. The new table will use the newRowType
+   * @param newRowType
+   * @return
+   */
+  public RelOptTableImpl copy(RelDataType newRowType) {
+    return new RelOptTableImpl(this.schema, newRowType, this.names, this.table,
+        this.expressionFunction, this.rowCount);
   }
 
   private static Function<Class, Expression> getClassExpressionFunction(
@@ -233,24 +246,32 @@ public class RelOptTableImpl implements Prepare.PreparingTable {
   }
 
   public RelNode toRel(ToRelContext context) {
+    // Before create Rel, make sure rowType's list is immutable. If rowType
+    // is DynamicRecordType, replace with RelRecordType, using the same field list.
+    RelOptTable relOptTable = this;
+    if (this.getRowType() instanceof DynamicRecordType) {
+      final RelDataType staticRowType = new RelRecordType(getRowType().getFieldList());
+      relOptTable = this.copy(staticRowType);
+    }
+
     if (table instanceof TranslatableTable) {
-      return ((TranslatableTable) table).toRel(context, this);
+      return ((TranslatableTable) table).toRel(context, relOptTable);
     }
     final RelOptCluster cluster = context.getCluster();
     if (CalcitePrepareImpl.ENABLE_BINDABLE) {
-      return LogicalTableScan.create(cluster, this);
+      return LogicalTableScan.create(cluster, relOptTable);
     }
     if (CalcitePrepareImpl.ENABLE_ENUMERABLE
         && table instanceof QueryableTable) {
-      return EnumerableTableScan.create(cluster, this);
+      return EnumerableTableScan.create(cluster, relOptTable);
     }
     if (table instanceof ScannableTable
         || table instanceof FilterableTable
         || table instanceof ProjectableFilterableTable) {
-      return LogicalTableScan.create(cluster, this);
+      return LogicalTableScan.create(cluster, relOptTable);
     }
     if (CalcitePrepareImpl.ENABLE_ENUMERABLE) {
-      return EnumerableTableScan.create(cluster, this);
+      return EnumerableTableScan.create(cluster, relOptTable);
     }
     throw new AssertionError();
   }
