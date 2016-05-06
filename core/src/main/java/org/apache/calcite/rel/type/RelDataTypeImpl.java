@@ -399,6 +399,10 @@ public abstract class RelDataTypeImpl
     return rowType.getField("_extra", true, false);
   }
 
+  public boolean isDynamicStruct() {
+    return false;
+  }
+
   /** Work space for {@link RelDataTypeImpl#getFieldRecurse}. */
   private static class Slot {
     int count;

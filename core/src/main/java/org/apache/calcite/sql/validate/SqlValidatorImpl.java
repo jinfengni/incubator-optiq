@@ -459,7 +459,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     case 1:
       for (Pair<String, SqlValidatorNamespace> p : scope.children) {
 
-        if (p.right.getRowType() instanceof DynamicRecordType) {
+        if (p.right.getRowType().isDynamicStruct()) {
           // don't expand if DynamicRecordType.
           final SqlNode exp = new SqlIdentifier(
                   ImmutableList.of(p.left, DynamicRecordType.DYNAMIC_STAR_PREFIX),
@@ -520,7 +520,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       assert fromNs != null;
       final RelDataType rowType = fromNs.getRowType();
 
-      if (rowType instanceof DynamicRecordType) {
+      if (rowType.isDynamicStruct()) {
         // Do not expand, if it's DynamicRecordType.
         addToSelectList(
             selectItems,

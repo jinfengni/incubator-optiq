@@ -20,10 +20,11 @@ package org.apache.calcite.rel.type;
 import com.google.common.collect.Lists;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RelDataTypeHolder {
-  List<RelDataTypeField> fields = Lists.newArrayList();
+  List<RelDataTypeField> fields = new ArrayList<>();
 
   private RelDataTypeFactory typeFactory;
 
