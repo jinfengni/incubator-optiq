@@ -51,7 +51,7 @@ public interface RelDataTypeField extends Map.Entry<String, RelDataType> {
    */
   RelDataType getType();
 
-  boolean isUnresolvedStar();
+  boolean isDynamicStar();
 }
 
 // End RelDataTypeField.java

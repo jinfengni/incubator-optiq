@@ -76,7 +76,7 @@ public class OrderByScope extends DelegatingScope {
 
       final RelDataTypeField field = validator.catalogReader.field(rowType, name);
       if (field != null) {
-        if (!field.isUnresolvedStar()) {
+        if (!field.isDynamicStar()) {
           // if we have an unresolved *, we should resolve an identifier to this unknown name.
           return SqlQualified.create(this, 1, selectNs, identifier);
         }

@@ -244,13 +244,13 @@ public abstract class DelegatingScope implements SqlValidatorScope {
       SqlIdentifier identifier, String columnName) {
 //    final RelDataTypeField field = validator.catalogReader.field(fromRowType, columnName);
 
-    if (field != null && field.isUnresolvedStar() && !columnName.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
+    if (field != null && field.isDynamicStar() && !columnName.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
       // Make sure fromRowType only contains one star column.
       // Having more than one star columns implies ambiguous column.
 
       int count = 0;
       for (RelDataTypeField possibleStar : fromRowType.getFieldList()) {
-        if (possibleStar.isUnresolvedStar()) {
+        if (possibleStar.isDynamicStar()) {
           count++;
         }
       }

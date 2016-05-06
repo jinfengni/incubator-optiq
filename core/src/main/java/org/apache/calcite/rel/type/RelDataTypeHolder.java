@@ -28,19 +28,11 @@ public class RelDataTypeHolder {
   private RelDataTypeFactory typeFactory;
 
   public List<RelDataTypeField> getFieldList(RelDataTypeFactory typeFactory) {
-//    addStarIfEmpty(typeFactory);
     return fields;
   }
 
   public int getFieldCount() {
-//    addStarIfEmpty(this.typeFactory);
     return fields.size();
-  }
-
-  private void addStarIfEmpty(RelDataTypeFactory typeFactory){
-    if (fields.isEmpty()){
-      getField(typeFactory, "*");
-    }
   }
 
   public RelDataTypeField getField(RelDataTypeFactory typeFactory, String fieldName) {
@@ -52,8 +44,10 @@ public class RelDataTypeHolder {
       }
     }
 
+    final SqlTypeName typeName = fieldName.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX) ? SqlTypeName.DYNAMIC_STAR : SqlTypeName.ANY;
+
     /* This field does not exist in our field list add it */
-    RelDataTypeField newField = new RelDataTypeFieldImpl(fieldName, fields.size(), typeFactory.createTypeWithNullability(typeFactory.createSqlType(SqlTypeName.ANY), true));
+    RelDataTypeField newField = new RelDataTypeFieldImpl(fieldName, fields.size(), typeFactory.createTypeWithNullability(typeFactory.createSqlType(typeName), true));
 
     /* Add the name to our list of field names */
     fields.add(newField);

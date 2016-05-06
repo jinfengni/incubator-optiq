@@ -110,7 +110,7 @@ public abstract class RelDataTypeImpl
 
     // an unresolved * field will match any field name.
     for (RelDataTypeField field : fieldList) {
-      if (field.isUnresolvedStar()) {
+      if (field.isDynamicStar()) {
         // the requested field could be in the unresolved star
         return field;
       }
