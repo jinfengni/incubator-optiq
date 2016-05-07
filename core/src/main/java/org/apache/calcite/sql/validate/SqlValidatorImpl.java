@@ -2814,6 +2814,11 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       break;
     case ON:
       Util.permAssert(condition != null, "condition != null");
+      if (condition != null) {
+        SqlNode expandedCondition = expand(condition, joinScope);
+        join.setOperand(5, expandedCondition);
+        condition = join.getCondition();
+      }
       validateWhereOrOn(joinScope, condition, "ON");
       break;
     case USING:
@@ -3335,6 +3340,15 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     final SqlValidatorScope groupScope = getGroupScope(select);
     inferUnknownTypes(unknownType, groupScope, groupList);
 
+    // expand the expression in group list.
+    List<SqlNode> expandedList = Lists.newArrayList();
+    for (SqlNode groupItem : groupList) {
+      SqlNode expandedItem = expand(groupItem, groupScope);
+      expandedList.add(expandedItem);
+    }
+    groupList = new SqlNodeList(expandedList, groupList.getParserPosition());
+    select.setGroupBy(groupList);
+
     // Nodes in the GROUP BY clause are expressions except if they are calls
     // to the GROUPING SETS, ROLLUP or CUBE operators; this operators are not
     // expressions, because they do not have a type.
@@ -3404,7 +3418,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       return;
     }
     final SqlValidatorScope whereScope = getWhereScope(select);
-    validateWhereOrOn(whereScope, where, "WHERE");
+    final SqlNode expandedWhere = expand(where, whereScope);
+    select.setWhere(expandedWhere);
+    validateWhereOrOn(whereScope, expandedWhere, "WHERE");
   }
 
   protected void validateWhereOrOn(
@@ -4443,8 +4459,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       final SqlIdentifier fqId = getScope().fullyQualify(id).identifier;
       SqlNode expandedExpr = fqId;
       // Convert a column ref into ITEM(*, 'col_name').
-      if (Util.last(fqId.names).equals("**")
-        && !Util.last(id.names).equals("**")) {
+      if (Util.last(fqId.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)
+        && !Util.last(id.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
           SqlNode[] inputs = new SqlNode[2];
         inputs[0] = fqId;
         inputs[1] = SqlLiteral.createCharString(
@@ -4458,8 +4474,6 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         }
       validator.setOriginal(expandedExpr, id);
       return expandedExpr;
-//      validator.setOriginal(fqId, id);
-//      return fqId;
     }
 
     @Override protected SqlNode visitScoped(SqlCall call) {
