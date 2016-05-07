@@ -1760,15 +1760,38 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   @Test
   public void testDynamicStarInTableJoin() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select * from (select * from SALES.NATION) , (SELECT * from SALES.CUSTOMER)";
+    final String sql = "select * from " +
+        " (select * from SALES.NATION) T1, " +
+        " (SELECT * from SALES.CUSTOMER) T2 " +
+        " where T1.n_nationkey = T2.c_nationkey";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void testReferDynamicStarInSelectWhereGB() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select n_regionkey, count(*) as cnt from (select * from SALES.NATION) where n_nationkey > 5 group by n_regionkey";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void testDynamicStarInJoinAndSubQ() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select * from (select * from SALES.NATION T1, SALES.CUSTOMER T2 where T1.n_nationkey = T2.c_nationkey)";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
+  public void testStarJoinStaticDynTable() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select * from SALES.NATION N, SALES.REGION as R where N.n_regionkey = R.r_regionkey";
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
   @Test
   public void test() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select n_nationkey, n_name from (select * from SALES.NATION) \n"
-        + " order by n_regionkey";
+    final String sql = "select * from SALES.REGION \n";
     runTester(myTester, sql);
   }
 
@@ -1779,8 +1802,8 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
             return new MockCatalogReader(typeFactory, true) {
               @Override public MockCatalogReader init() {
                 // CREATE SCHEMA "SALES;
-                // CREATE TABLE "NATION"
-                // CREATE TABLE "CUSTOMER"
+                // CREATE DYNAMIC TABLE "NATION"
+                // CREATE DYNAMIC TABLE "CUSTOMER"
 
                 MockSchema schema = new MockSchema("SALES");
                 registerSchema(schema);
@@ -1793,6 +1816,17 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
                     schema.getName(), "CUSTOMER", false, 100);
                 registerTable(customerTable);
 
+                // CREATE TABLE "REGION" - static table with known schema.
+                final RelDataType intType =
+                    typeFactory.createSqlType(SqlTypeName.INTEGER);
+                final RelDataType varcharType =
+                    typeFactory.createSqlType(SqlTypeName.VARCHAR);
+
+                MockTable regionTable = MockTable.create(this, schema, "REGION", false, 100);
+                regionTable.addColumn("R_REGIONKEY", intType);
+                regionTable.addColumn("R_NAME", varcharType);
+                regionTable.addColumn("R_COMMENT", varcharType);
+                registerTable(regionTable);
                 return this;
               }
             }.init();
