@@ -1791,7 +1791,10 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   @Test
   public void test() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select * from SALES.REGION \n";
+    final String sql = "select n_nationkey from (select * from SALES.NATION) order by n_regionkey \n";
+//    final String sql = "select count(*) as c\n"
+//        + " from \"SALES\".REGION\n"
+//        + " group by (select R_REGIONKEY from \"SALES\".REGION where r_name > 'abc')";
     runTester(myTester, sql);
   }
 

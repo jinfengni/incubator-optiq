@@ -4481,6 +4481,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       case SCALAR_QUERY:
       case CURRENT_VALUE:
       case NEXT_VALUE:
+      case WITH:
         return call;
       }
       // Only visits arguments which are expressions. We don't want to
