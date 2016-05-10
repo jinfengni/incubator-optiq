@@ -675,41 +675,6 @@ public class SqlValidatorUtil {
     }
   }
 
-  /**
-   * Walks over an expression, copying every node, fully-qualifying every
-   * identifier and expand star if necessary
-   */
-  public static class ExpansionAndDeepCopier extends DeepCopier {
-    ExpansionAndDeepCopier(SqlValidatorScope scope) {
-      super(scope);
-    }
-
-    /** Copies a list of nodes. */
-    public static SqlNodeList copy(SqlValidatorScope scope, SqlNodeList list) {
-      return (SqlNodeList) list.accept(new ExpansionAndDeepCopier(scope));
-    }
-
-    @Override
-    public SqlNode visit(SqlIdentifier id) {
-      SqlIdentifier fqId = getScope().fullyQualify(id).identifier;
-      if (Util.last(fqId.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)
-          && !Util.last(id.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
-        SqlNode[] inputs = new SqlNode[2];
-        inputs[0] = fqId;
-        inputs[1] = SqlLiteral.createCharString(
-            Util.last(id.names),
-                id.getParserPosition());
-        return new SqlBasicCall(
-            SqlStdOperatorTable.ITEM,
-                inputs,
-                    id.getParserPosition());
-      } else {
-        return fqId;
-      }
-    }
-  }
-
-
   /** Suggests candidates for unique names, given the number of attempts so far
    * and the number of expressions in the project list. */
   interface Suggester {
