@@ -38,7 +38,6 @@ import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
-import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
@@ -721,6 +720,10 @@ public class MockCatalogReader implements Prepare.CatalogReader {
     }
   }
 
+  /**
+   * Mock implementation of
+   * {@link org.apache.calcite.prepare.Prepare.PreparingTable} with dynamic record type.
+   */
   public static class MockDynamicTable extends MockTable {
     public MockDynamicTable(MockCatalogReader catalogReader, String catalogName,
         String schemaName, String name, boolean stream, double rowCount) {

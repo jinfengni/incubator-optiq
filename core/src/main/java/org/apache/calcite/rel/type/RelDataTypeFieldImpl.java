@@ -104,7 +104,8 @@ public class RelDataTypeFieldImpl implements RelDataTypeField, Serializable {
 
   @Override
   public boolean isDynamicStar() {
-    return name.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX) || type.getSqlTypeName() == SqlTypeName.DYNAMIC_STAR;
+    return name.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)
+        || type.getSqlTypeName() == SqlTypeName.DYNAMIC_STAR;
   }
 
 }

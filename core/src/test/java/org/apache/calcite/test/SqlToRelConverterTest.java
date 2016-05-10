@@ -16,11 +16,8 @@
  */
 package org.apache.calcite.test;
 
-import com.google.common.base.Function;
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.externalize.RelXmlWriter;
 import org.apache.calcite.rel.type.RelDataType;
@@ -31,6 +28,8 @@ import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.TestUtil;
 import org.apache.calcite.util.Util;
+
+import com.google.common.base.Function;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1732,7 +1731,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   /**
    * Following test cases are for Dynamic Table / Dynamic Star support
-   * <a href="https://issues.apache.org/jira/browse/CALCITE-1150">[CALCITE-1150]
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-1150">[CALCITE-1150]</a>
    * @throws Exception
    */
   @Test
@@ -1760,38 +1759,45 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   @Test
   public void testDynamicStarInTableJoin() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select * from " +
-        " (select * from SALES.NATION) T1, " +
-        " (SELECT * from SALES.CUSTOMER) T2 " +
-        " where T1.n_nationkey = T2.c_nationkey";
+    final String sql = "select * from "
+        + " (select * from SALES.NATION) T1, "
+        + " (SELECT * from SALES.CUSTOMER) T2 "
+        + " where T1.n_nationkey = T2.c_nationkey";
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
   @Test
   public void testReferDynamicStarInSelectWhereGB() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select n_regionkey, count(*) as cnt from (select * from SALES.NATION) where n_nationkey > 5 group by n_regionkey";
+    final String sql = "select n_regionkey, count(*) as cnt from "
+        + "(select * from SALES.NATION) where n_nationkey > 5 "
+        + "group by n_regionkey";
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
   @Test
   public void testDynamicStarInJoinAndSubQ() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select * from (select * from SALES.NATION T1, SALES.CUSTOMER T2 where T1.n_nationkey = T2.c_nationkey)";
+    final String sql = "select * from "
+        + " (select * from SALES.NATION T1, "
+        + " SALES.CUSTOMER T2 where T1.n_nationkey = T2.c_nationkey)";
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
   @Test
   public void testStarJoinStaticDynTable() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select * from SALES.NATION N, SALES.REGION as R where N.n_regionkey = R.r_regionkey";
+    final String sql = "select * from SALES.NATION N, SALES.REGION as R "
+        + "where N.n_regionkey = R.r_regionkey";
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
   @Test
   public void testGrpByColFromStarInSubQuery() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "SELECT n.n_nationkey AS col from (SELECT * FROM SALES.NATION) as n group by n.n_nationkey";
+    final String sql = "SELECT n.n_nationkey AS col "
+        + " from (SELECT * FROM SALES.NATION) as n "
+        + " group by n.n_nationkey";
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
@@ -1802,15 +1808,8 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     myTester.assertConvertsTo(sql, "${plan}");
   }
 
-  @Test
-  public void test() throws Exception {
-    Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select * from SALES.REGION where exists (select * from SALES.NATION)\n";
-    runTester(myTester, sql);
-  }
-
   private Tester getTesterWithDynamicTable() {
-    return tester.withCatalogReaderFactory (
+    return tester.withCatalogReaderFactory(
         new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
           public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
             return new MockCatalogReader(typeFactory, true) {
@@ -1843,17 +1842,11 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
                 registerTable(regionTable);
                 return this;
               }
+              // CHECKSTYLE: IGNORE 1
             }.init();
           }
         });
   }
-
-  private void runTester(Tester tester, String sql) {
-    RelRoot root;
-    root = tester.convertSqlToRel(sql);
-    System.out.println("relRoot = " + RelOptUtil.dumpPlan("Debug plan", root.project(), false, SqlExplainLevel.ALL_ATTRIBUTES));
-  }
-
 
   /**
    * Visitor that checks that every {@link RelNode} in a tree is valid.

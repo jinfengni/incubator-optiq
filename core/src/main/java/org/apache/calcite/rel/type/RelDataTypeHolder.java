@@ -17,12 +17,15 @@
 
 package org.apache.calcite.rel.type;
 
-import com.google.common.collect.Lists;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Holding the expandable list of fields for dynamic table.
+ */
 public class RelDataTypeHolder {
   List<RelDataTypeField> fields = new ArrayList<>();
 
@@ -36,19 +39,29 @@ public class RelDataTypeHolder {
     return fields.size();
   }
 
-  public RelDataTypeField getField(RelDataTypeFactory typeFactory, String fieldName) {
+  /**
+   * @param typeFactory
+   * @param fieldName
+   * @return
+   */
+  public RelDataTypeField getFieldOrInsert(RelDataTypeFactory typeFactory, String fieldName,
+      boolean caseSensitive) {
 
     /* First check if this field name exists in our field list */
     for (RelDataTypeField f : fields) {
-      if (fieldName.equalsIgnoreCase(f.getName())) {
+      if (Util.matches(caseSensitive, f.getName(), fieldName)) {
         return f;
       }
     }
 
-    final SqlTypeName typeName = fieldName.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX) ? SqlTypeName.DYNAMIC_STAR : SqlTypeName.ANY;
+    final SqlTypeName typeName = fieldName.startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)
+        ? SqlTypeName.DYNAMIC_STAR : SqlTypeName.ANY;
 
     /* This field does not exist in our field list add it */
-    RelDataTypeField newField = new RelDataTypeFieldImpl(fieldName, fields.size(), typeFactory.createTypeWithNullability(typeFactory.createSqlType(typeName), true));
+    RelDataTypeField newField = new RelDataTypeFieldImpl(
+        fieldName,
+        fields.size(),
+        typeFactory.createTypeWithNullability(typeFactory.createSqlType(typeName), true));
 
     /* Add the name to our list of field names */
     fields.add(newField);
@@ -57,10 +70,10 @@ public class RelDataTypeHolder {
   }
 
   public List<String> getFieldNames() {
-    List<String> fieldNames = Lists.newArrayList();
-    for(RelDataTypeField f : fields){
+    List<String> fieldNames = new ArrayList<>();
+    for (RelDataTypeField f : fields) {
       fieldNames.add(f.getName());
-    };
+    }
 
     return fieldNames;
   }
@@ -76,11 +89,7 @@ public class RelDataTypeHolder {
 
   @Override
   public boolean equals(Object obj) {
-    return (this == obj);
-  }
-
-  private List<RelDataTypeField> getFieldList() {
-    return getFieldList(this.typeFactory);
+    return this == obj;
   }
 
 }

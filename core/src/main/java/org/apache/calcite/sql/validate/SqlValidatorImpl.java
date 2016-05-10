@@ -4461,17 +4461,17 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       // Convert a column ref into ITEM(*, 'col_name').
       if (Util.last(fqId.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)
         && !Util.last(id.names).startsWith(DynamicRecordType.DYNAMIC_STAR_PREFIX)) {
-          SqlNode[] inputs = new SqlNode[2];
+        SqlNode[] inputs = new SqlNode[2];
         inputs[0] = fqId;
         inputs[1] = SqlLiteral.createCharString(
           Util.last(id.names),
           id.getParserPosition());
-          SqlBasicCall item_call = new SqlBasicCall(
+        SqlBasicCall item_call = new SqlBasicCall(
           SqlStdOperatorTable.ITEM,
           inputs,
           id.getParserPosition());
-          expandedExpr = item_call;
-        }
+        expandedExpr = item_call;
+      }
       validator.setOriginal(expandedExpr, id);
       return expandedExpr;
     }

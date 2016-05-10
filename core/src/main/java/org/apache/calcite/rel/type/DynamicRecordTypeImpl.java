@@ -23,7 +23,14 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.Collections;
 import java.util.List;
 
-public class DynamicRecordTypeImpl extends DynamicRecordType{
+/**
+ * Implementation of RelDataType for dynamic table. It's used in
+ * Sql validation phase, where field list is mutable for getField() call.
+ *
+ * After Sql validation, a normal RelDataTypeImpl with immutable field list
+ * would take place of DynamicRecordTypeImpl instance for dynamic table.
+ */
+public class DynamicRecordTypeImpl extends DynamicRecordType {
 
   private final RelDataTypeFactory typeFactory;
   private final RelDataTypeHolder holder;
@@ -47,7 +54,7 @@ public class DynamicRecordTypeImpl extends DynamicRecordType{
 
   @Override
   public RelDataTypeField getField(String fieldName, boolean caseSensitive, boolean elideRecord) {
-    return holder.getField(typeFactory, fieldName);
+    return holder.getFieldOrInsert(typeFactory, fieldName, caseSensitive);
   }
 
   @Override

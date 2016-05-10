@@ -16,7 +16,6 @@
  */
 package org.apache.calcite.rel.type;
 
-import java.util.List;
 
 /**
  * Specific type of RelRecordType that corresponds to a dynamic table,
