@@ -3381,5 +3381,23 @@ LogicalAggregate(group=[{0}])
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testDynStarInExistSubQ">
+        <Resource name="sql">
+            <![CDATA[select * from SALES.REGION where exists (select * from SALES.NATION)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(R_REGIONKEY=[$0], R_NAME=[$1], R_COMMENT=[$2])
+  LogicalFilter(condition=[IS NOT NULL($3)])
+    LogicalJoin(condition=[true], joinType=[left])
+      LogicalTableScan(table=[[CATALOG, SALES, REGION]])
+      LogicalAggregate(group=[{}], agg#0=[MIN($0)])
+        LogicalProject($f0=[true])
+          LogicalProject(**=[$0])
+            LogicalTableScan(table=[[CATALOG, SALES, NATION]])
+]]>
+        </Resource>
+    </TestCase>
+
 
 </Root>

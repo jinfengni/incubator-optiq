@@ -1796,9 +1796,16 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test
+  public void testDynStarInExistSubQ() throws Exception {
+    Tester myTester = getTesterWithDynamicTable();
+    final String sql = "select * from SALES.REGION where exists (select * from SALES.NATION)";
+    myTester.assertConvertsTo(sql, "${plan}");
+  }
+
+  @Test
   public void test() throws Exception {
     Tester myTester = getTesterWithDynamicTable();
-    final String sql = "select n_nationkey from (select * from SALES.NATION) order by n_regionkey \n";
+    final String sql = "select * from SALES.REGION where exists (select * from SALES.NATION)\n";
     runTester(myTester, sql);
   }
 
